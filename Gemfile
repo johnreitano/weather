@@ -48,6 +48,8 @@ gem "bootsnap", require: false
 # gem "image_processing", "~> 1.2"
 
 gem "open-weather-ruby-client"
+gem "countries", "~> 5.7"
+gem "validates_zipcode", "~> 0.5.2"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -74,7 +76,3 @@ group :test do
   gem "selenium-webdriver"
   gem "timecop"
 end
-
-gem "countries", "~> 5.7"
-
-gem "validates_zipcode", "~> 0.5.2"

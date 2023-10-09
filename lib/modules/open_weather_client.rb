@@ -85,7 +85,7 @@ module OpenWeatherClient
 
   def self.format_temp(temp, temp_unit)
     temp = celsius_to_fahrenheit(temp) unless temp_unit&.to_s == "celsius"
-    temp.round(1)
+    temp.round
   end
 
   ZERO_CELSIUS_IN_KELVIN = -273.15
