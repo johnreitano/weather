@@ -1,6 +1,13 @@
 module OpenWeatherClient
   WEATHER_CACHE_EXPIRATION = 20.seconds
   def self.retrieve_weather(opts)
+    %w[latitude longitude zipcode country].each do |key|
+      if opts[key.to_sym].blank?
+        Rails.logger.warn("retrieve_weather with missing value for key #{key}")
+        return [{}, false]
+      end
+    end
+
     cached_data_key = key(opts)
     data = Rails.cache.read(cached_data_key)
     if data
@@ -19,7 +26,7 @@ module OpenWeatherClient
   # private_class_method
 
   def self.key(opts)
-    "WEATHER/#{opts[:zip]}/#{opts[:country]}"
+    "WEATHER/#{opts[:city]}/#{opts[:state]}/#{opts[:zip]}/#{opts[:country]}"
   end
 
   def self.load_raw_data(opts)
@@ -42,6 +49,7 @@ module OpenWeatherClient
 
     data = {
       current_temp: k_to_c(raw_data.dig("current", "temp")),
+      retrieved_at: current_time, # TODO: get this from OpenWeather
       days: raw_data["daily"][0..7].each_with_index.map do |d, i|
         {
           day: d["dt"].strftime("%a %d"),
@@ -54,17 +62,14 @@ module OpenWeatherClient
   end
 
   def self.format_temps(data, temp_unit)
-    {
-      current_temp: format_temp(data[:current_temp], temp_unit),
-      days: data[:days][0..7].each_with_index.map do |d, i|
-        {
-          day: d[:day],
-          low: format_temp(data[:days][i][:low], temp_unit),
-          high: format_temp(data[:days][i][:high], temp_unit)
-        }
-      end,
-      cached: data[:cached]
-    }
+    data = data.dup
+    data[:current_temp] = format_temp(data[:current_temp], temp_unit)
+    data[:days] = data[:days].dup
+    data[:days].each_with_index do |d, i|
+      data[:days][i][:low] = format_temp(data[:days][i][:low], temp_unit)
+      data[:days][i][:high] = format_temp(data[:days][i][:high], temp_unit)
+    end
+    data
   end
 
   def self.format_temp(temp, temp_unit)
@@ -79,5 +84,10 @@ module OpenWeatherClient
 
   def self.c_to_f(temp_c)
     (temp_c.to_f * 9.0 / 5.0 + 32.0).round(2)
+  end
+
+  def self.current_time
+    t = Time.at((Time.now.to_f / 1.minute).round * 1.minute) # round to nearest minute
+    t.in_time_zone("Pacific Time (US & Canada)") # TODO: swith to end-user's time zone
   end
 end

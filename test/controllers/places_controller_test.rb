@@ -1,48 +1,14 @@
 require "test_helper"
 
 class PlacesControllerTest < ActionDispatch::IntegrationTest
-  setup do
-    @place = places(:one)
-  end
-
   test "should get index" do
     get places_url
     assert_response :success
   end
 
-  test "should get new" do
-    get new_place_url
-    assert_response :success
-  end
-
   test "should create place" do
-    assert_difference("Place.count") do
-      post places_url, params: {place: {country: @place.country, latitude: @place.latitude, longitude: @place.longitude, zipcode: @place.zipcode}}
-    end
-
-    assert_redirected_to place_url(Place.last)
-  end
-
-  test "should show place" do
-    get place_url(@place)
+    @place = Place.new(latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA", zipcode: "91913", country: "US", temp_unit: "fahrenheit")
+    post places_url, params: {place: {city: @place.city, state: @place.state, country: @place.country, latitude: @place.latitude, longitude: @place.longitude, zipcode: @place.zipcode}}
     assert_response :success
-  end
-
-  test "should get edit" do
-    get edit_place_url(@place)
-    assert_response :success
-  end
-
-  test "should update place" do
-    patch place_url(@place), params: {place: {country: @place.country, latitude: @place.latitude, longitude: @place.longitude, zipcode: @place.zipcode}}
-    assert_redirected_to place_url(@place)
-  end
-
-  test "should destroy place" do
-    assert_difference("Place.count", -1) do
-      delete place_url(@place)
-    end
-
-    assert_redirected_to places_url
   end
 end

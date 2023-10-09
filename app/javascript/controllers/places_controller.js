@@ -4,6 +4,8 @@ export default class extends Controller {
   static targets = [
     'weather_form',
     'full_address',
+    'city',
+    'state',
     'zipcode',
     'country',
     'latitude',
@@ -76,6 +78,20 @@ export default class extends Controller {
     this.longitudeTarget.value = place.geometry.location.lng()
     for (const component of place.address_components) {
       switch (component.types[0]) {
+        case 'locality':
+          this.cityTarget.value = component.long_name
+          break
+
+        case 'administrative_area_level_1': {
+          this.stateTarget.value = component.short_name
+          break
+        }
+
+        case 'postal_code': {
+          this.zipcodeTarget.value = component.long_name
+          break
+        }
+
         case 'postal_code': {
           this.zipcodeTarget.value = component.long_name
           break

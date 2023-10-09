@@ -11,10 +11,14 @@ An app that retrieves current and forecast weather based on entered address
 - Ruby verson: 3.2.2
 - Rails verson: 7.1.0
 - Uses OpenWeather API via gem open-weather-ruby-client
-- No database
-- Cache is currently done via file system, should be moved to Redis in production
+
+### Future improvements
+
+- Cacheing is currently done via file system, but should be moved to Redis in production
 
 ### TODO
 
-- add front end
-- add system tests
+- Organize Front End
+- Style Front End
+- complete model tests
+- complete system tests

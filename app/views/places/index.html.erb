@@ -3,8 +3,7 @@
   <%= form_with(model: @place, id: "weather_form", local: true, data: { "places-target": "weather_form" }
 ) do |form| %>
     <div>
-      <%= form.label "Enter an address", style: "display: block" %>
-      <%= form.text_field :full_address, data: { "places-target": "full_address" }, class: "w-3/4" %>
+      <%= form.text_field :full_address, data: { "places-target": "full_address" }, class: "w-full" %>
     </div>
     <div>
       <%= form.label :latitude, style: "display: block" %>
@@ -13,6 +12,14 @@
     <div>
       <%= form.label :longitude, style: "display: block" %>
       <%= form.text_field :longitude, data: { "places-target": "longitude" } %>
+    </div>
+    <div>
+      <%= form.label :city, style: "display: block" %>
+      <%= form.text_field :city, data: { "places-target": "city" } %>
+    </div>
+    <div>
+      <%= form.label :state, style: "display: block" %>
+      <%= form.text_field :state, data: { "places-target": "state" } %>
     </div>
     <div>
       <%= form.label :zipcode, style: "display: block" %>
@@ -40,7 +47,7 @@
       <% end%>
     </div>
     <div data-places-target="weather_data_present" <%= 'hidden="hidden"' unless @place.has_weather_data? %> >
-      <div><%= @place.full_address %> at <%= @place.current_time %></div>
+      <div><%= @place.full_address %> at <%= @place.retrieved_at %> <%= @place.cached? ? "(Cached)" : "" %> </div>
       <div>
         <div><span>Current Temp:</span><span><%= @place.current_temp %></span></div>
         <div><span>Today's High:</span><span><%= @place.current_day_low %></span></div>
