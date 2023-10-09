@@ -5,12 +5,29 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
+    <%= stylesheet_link_tag "tailwind", "inter-font", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+    <script>
+      window.initMap = (...args) => {
+        console.log('initMap(): about to dispatch event')
+        window.dispatchEvent(new Event('google-maps-loaded', {
+          bubbles: true,
+          cancelable: true,
+          args: args,
+        }))
+      }
+    </script>
+    <script
+          src="https://maps.googleapis.com/maps/api/js?key=<%= Rails.application.credentials.dig(:google_api_key)%>&libraries=places&callback=initMap"
+          async=""
+          defer=""
+          data-turbolinks-evel="false"
+          ></script>
   </head>
-
   <body>
-    <%= yield %>
+    <main class="container mx-auto mt-28 px-5 flex">
+      <%= yield %>
+    </main>
   </body>
 </html>

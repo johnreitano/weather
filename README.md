@@ -1,24 +1,20 @@
-# README
+# Weather
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+An app that retrieves current and forecast weather based on entered address
 
-Things you may want to cover:
+### Running tests
 
-* Ruby version
+### Deloyment
 
-* System dependencies
+### Other details
 
-* Configuration
+- Ruby verson: 3.2.2
+- Rails verson: 7.1.0
+- Uses OpenWeather API via gem open-weather-ruby-client
+- No database
+- Cache is currently done via file system, should be moved to Redis in production
 
-* Database creation
+### TODO
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+- add front end
+- add system tests

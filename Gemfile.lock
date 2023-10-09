@@ -76,6 +76,7 @@ GEM
       tzinfo (~> 2.0)
     addressable (2.8.5)
       public_suffix (>= 2.0.2, < 6.0)
+    ast (2.4.2)
     base64 (0.1.1)
     bigdecimal (3.1.4)
     bindex (0.8.1)
@@ -93,6 +94,8 @@ GEM
       xpath (~> 3.2)
     concurrent-ruby (1.2.2)
     connection_pool (2.4.1)
+    countries (5.7.0)
+      unaccent (~> 0.3)
     crass (1.0.6)
     date (3.3.3)
     debug (1.8.0)
@@ -101,8 +104,16 @@ GEM
     drb (2.1.1)
       ruby2_keywords
     erubi (1.12.0)
+    faraday (2.7.11)
+      base64
+      faraday-net_http (>= 2.0, < 3.1)
+      ruby2_keywords (>= 0.0.4)
+    faraday-multipart (1.0.4)
+      multipart-post (~> 2)
+    faraday-net_http (3.0.2)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    hashie (5.0.0)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
     importmap-rails (1.2.1)
@@ -115,6 +126,9 @@ GEM
     jbuilder (2.11.5)
       actionview (>= 5.0.0)
       activesupport (>= 5.0.0)
+    json (2.6.3)
+    language_server-protocol (3.17.0.3)
+    lint_roller (1.1.0)
     loofah (2.21.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -128,6 +142,7 @@ GEM
     mini_mime (1.1.5)
     minitest (5.20.0)
     msgpack (1.7.2)
+    multipart-post (2.3.0)
     mutex_m (0.1.2)
     net-imap (0.4.0)
       date
@@ -139,12 +154,17 @@ GEM
     net-smtp (0.4.0)
       net-protocol
     nio4r (2.5.9)
-    nokogiri (1.15.4-aarch64-linux)
-      racc (~> 1.4)
     nokogiri (1.15.4-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.15.4-x86_64-linux)
-      racc (~> 1.4)
+    open-weather-ruby-client (0.4.0)
+      activesupport
+      faraday (>= 2.0.1)
+      faraday-multipart
+      hashie
+    parallel (1.23.0)
+    parser (3.2.2.4)
+      ast (~> 2.4.1)
+      racc
     psych (5.1.0)
       stringio
     public_suffix (5.0.3)
@@ -188,17 +208,32 @@ GEM
       rake (>= 12.2)
       thor (~> 1.0, >= 1.2.2)
       zeitwerk (~> 2.6)
+    rainbow (3.1.1)
     rake (13.0.6)
     rdoc (6.5.0)
       psych (>= 4.0.0)
-    redis (5.0.7)
-      redis-client (>= 0.9.0)
-    redis-client (0.17.0)
-      connection_pool
     regexp_parser (2.8.1)
     reline (0.3.9)
       io-console (~> 0.5)
     rexml (3.2.6)
+    rubocop (1.56.4)
+      base64 (~> 0.1.1)
+      json (~> 2.3)
+      language_server-protocol (>= 3.17.0)
+      parallel (~> 1.10)
+      parser (>= 3.2.2.3)
+      rainbow (>= 2.2.2, < 4.0)
+      regexp_parser (>= 1.8, < 3.0)
+      rexml (>= 3.2.5, < 4.0)
+      rubocop-ast (>= 1.28.1, < 2.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 2.4.0, < 3.0)
+    rubocop-ast (1.29.0)
+      parser (>= 3.2.1.0)
+    rubocop-performance (1.19.1)
+      rubocop (>= 1.7.0, < 2.0)
+      rubocop-ast (>= 0.4.0)
+    ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     rubyzip (2.3.2)
     selenium-webdriver (4.13.1)
@@ -212,13 +247,26 @@ GEM
       actionpack (>= 5.2)
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
-    sqlite3 (1.6.6-aarch64-linux)
     sqlite3 (1.6.6-arm64-darwin)
-    sqlite3 (1.6.6-x86_64-linux)
+    standard (1.31.1)
+      language_server-protocol (~> 3.17.0.2)
+      lint_roller (~> 1.0)
+      rubocop (~> 1.56.2)
+      standard-custom (~> 1.0.0)
+      standard-performance (~> 1.2)
+    standard-custom (1.0.2)
+      lint_roller (~> 1.0)
+      rubocop (~> 1.50)
+    standard-performance (1.2.0)
+      lint_roller (~> 1.1)
+      rubocop-performance (~> 1.19.0)
     stimulus-rails (1.2.2)
       railties (>= 6.0.0)
     stringio (3.0.8)
+    tailwindcss-rails (2.0.30-arm64-darwin)
+      railties (>= 6.0.0)
     thor (1.2.2)
+    timecop (0.9.8)
     timeout (0.4.0)
     turbo-rails (1.4.0)
       actionpack (>= 6.0.0)
@@ -226,6 +274,10 @@ GEM
       railties (>= 6.0.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    unaccent (0.4.0)
+    unicode-display_width (2.5.0)
+    validates_zipcode (0.5.2)
+      activemodel (>= 4.2.0)
     web-console (4.2.1)
       actionview (>= 6.0.0)
       activemodel (>= 6.0.0)
@@ -241,25 +293,28 @@ GEM
     zeitwerk (2.6.12)
 
 PLATFORMS
-  aarch64-linux
   arm64-darwin-22
-  x86_64-linux
 
 DEPENDENCIES
   bootsnap
   capybara
+  countries (~> 5.7)
   debug
   importmap-rails
   jbuilder
+  open-weather-ruby-client
   puma (>= 5.0)
   rails (~> 7.1.0)
-  redis (>= 4.0.1)
   selenium-webdriver
   sprockets-rails
   sqlite3 (~> 1.4)
+  standard
   stimulus-rails
+  tailwindcss-rails
+  timecop
   turbo-rails
   tzinfo-data
+  validates_zipcode (~> 0.5.2)
   web-console
 
 RUBY VERSION
