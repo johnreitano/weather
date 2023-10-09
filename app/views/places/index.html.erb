@@ -57,7 +57,7 @@
         <div>7-day Forecast</div>
         <% (1..7).each do |i| %>
           <div>
-            <span><%= @place.day_description(i) %></span>
+            <span><%= @place.day_label(i) %></span>
             <span>High</span><span><%= @place.day_high(i) %></span>
             <span>Low</span><span><%= @place.day_low(i) %></span>
           </div>

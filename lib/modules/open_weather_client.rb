@@ -1,5 +1,6 @@
 module OpenWeatherClient
   WEATHER_CACHE_EXPIRATION = 20.seconds
+
   def self.retrieve_weather(opts)
     %w[latitude longitude zipcode country].each do |key|
       if opts[key.to_sym].blank?
@@ -52,7 +53,7 @@ module OpenWeatherClient
       retrieved_at: current_time, # TODO: get this from OpenWeather
       days: raw_data["daily"][0..7].each_with_index.map do |d, i|
         {
-          day: d["dt"].strftime("%a %d"),
+          day_label: d["dt"].strftime("%a %d"),
           low: k_to_c(d.dig("temp", "min")),
           high: k_to_c(d.dig("temp", "max"))
         }

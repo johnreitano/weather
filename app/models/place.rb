@@ -19,10 +19,15 @@ class Place
   validates :country, presence: true
   validates :temp_unit, inclusion: {in: ["fahrenheit", "celsius"], allow_blank: true, message: "must be 'fahrenheit' or 'celsius'"}
 
+  def initialize(params = {})
+    self.weather_data = {}
+    super(params)
+  end
+
   def retrieve_weather
     return false unless valid?
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
-    self.weather_data, success = OpenWeatherClient.retrieve_weather(opts)
+    self.weather_data, success = open_weather_client.retrieve_weather(opts)
     errors.add(:weather_data, "could not be retrieve from weather service") unless success
     success
   end
@@ -45,8 +50,8 @@ class Place
     day_high(0)
   end
 
-  def day_description(i)
-    day(i)[:day]
+  def day_label(i)
+    day(i)[:day_label]
   end
 
   def day_low(i)
@@ -68,11 +73,15 @@ class Place
     self.weather_data ||= {}
     return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:days].present? && weather_data[:days].length == 8
 
-    weather_data[:days].all? { |d| d[:day].present? && d[:high].present? && d[:low].present? }
+    weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
   end
 
   def cached?
     self.weather_data ||= {}
     weather_data[:cached].present?
+  end
+
+  def open_weather_client
+    OpenWeatherClient
   end
 end

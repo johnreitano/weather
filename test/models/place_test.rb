@@ -6,7 +6,7 @@ class PlaceTest < ActiveSupport::TestCase
     @required_fields = [:latitude, :longitude, :zipcode, :country]
     @optional_fields = [:city, :state, :temp_unit]
 
-    @complete_weather_data = {current_temp: 87.2, days: [{day: "Sat 07", low: 70.6, high: 87.2}, {day: "Sun 08", low: 72.7, high: 88.9}, {day: "Mon 09", low: 67.6, high: 81.2}, {day: "Tue 10", low: 64.0, high: 73.7}, {day: "Wed 11", low: 65.0, high: 72.3}, {day: "Thu 12", low: 63.6, high: 73.5}, {day: "Fri 13", low: 64.2, high: 74.0}, {day: "Sat 14", low: 63.6, high: 74.6}], cached: false}
+    @complete_weather_data = {current_temp: 87.2, days: [{day_label: "Sat 07", low: 70.6, high: 87.2}, {day_label: "Sun 08", low: 72.7, high: 88.9}, {day_label: "Mon 09", low: 67.6, high: 81.2}, {day_label: "Tue 10", low: 64.0, high: 73.7}, {day_label: "Wed 11", low: 65.0, high: 72.3}, {day_label: "Thu 12", low: 63.6, high: 73.5}, {day_label: "Fri 13", low: 64.2, high: 74.0}, {day_label: "Sat 14", low: 63.6, high: 74.6}], cached: false}
   end
 
   test "passes validation if all required fields are present" do
@@ -31,24 +31,45 @@ class PlaceTest < ActiveSupport::TestCase
   end
 
   test "retrieve_weather returns false if place is invalid" do
-    skip
+    place = Place.new(@all_attributes.except(:latitude))
+    refute place.valid?
+    refute place.retrieve_weather
   end
 
-  test "retrieve_weather calls OpenWeatherClient.retrieve_weather, on success storing the result in the field 'weather_data'" do
-    skip
+  test "retrieve_weather - calls OpenWeatherClient.retrieve_weather" do
+    mock = Minitest::Mock.new
+    attrs = @all_attributes.slice(:latitude, :longitude, :city, :state, :zipcode, :country, :temp_unit)
+    mock.expect :retrieve_weather, [@complete_weather_data, true], [attrs]
+
+    place = Place.new(@all_attributes)
+    place.stub :open_weather_client, mock do
+      place.retrieve_weather
+    end
   end
 
-  test "retrieve_weather calls OpenWeatherClient.retrieve_weather, on failure adding an error to the field 'weather_data'" do
-    skip
+  test "retrieve_weather - when call to OpenWeatherClient.retrieve_weather succeeds, stores resulting data in the field 'weather_data'" do
+    place = Place.new(@all_attributes)
+    refute place.has_weather_data?
+    OpenWeatherClient.stub :retrieve_weather, [@complete_weather_data, true] do
+      assert place.retrieve_weather
+      assert place.has_weather_data?
+      assert_equal @complete_weather_data, place.weather_data
+    end
+  end
+
+  test "retrieve_weather - when call to OpenWeatherClient.retrieve_weather fails, stores empty hash in 'weather_data'" do
+    place = Place.new(@all_attributes)
+    refute place.has_weather_data?
+    OpenWeatherClient.stub :retrieve_weather, [{}, false] do
+      refute place.retrieve_weather
+      refute place.has_weather_data?
+      assert_equal({}, place.weather_data)
+    end
   end
 
   test "current_temp returns the correct value after attempting to extract it from weather_data" do
     place = Place.new
 
-    place.weather_data = nil
-    assert_nil place.current_temp
-
-    place.weather_data = {}
     assert_nil place.current_temp
 
     place.weather_data = {current_temp: nil}
@@ -59,36 +80,71 @@ class PlaceTest < ActiveSupport::TestCase
   end
 
   test "retrieved_at returns the correct value after attempting to extract it from weather_data" do
-    skip
+    place = Place.new
+
+    assert_nil place.retrieved_at
+
+    place.weather_data = {retrieved_at: nil}
+    assert_nil place.retrieved_at
+
+    now = Time.now
+    place.weather_data = {retrieved_at: now}
+    assert_equal now, place.retrieved_at
   end
 
   test "current_day_low returns the correct value after attempting to extract it from weather_data" do
-    skip
+    place = Place.new
+
+    assert_nil place.current_day_low
+
+    place.weather_data = {days: []}
+    assert_nil place.current_day_low
+
+    place.weather_data = @complete_weather_data
+    assert_equal 70.6, place.current_day_low
   end
 
   test "current_day_high returns the correct value after attempting to extract it from weather_data" do
-    skip
+    place = Place.new
+
+    assert_nil place.current_day_high
+
+    place.weather_data = {days: []}
+    assert_nil place.current_day_high
+
+    place.weather_data = @complete_weather_data
+    assert_equal 87.2, place.current_day_high
   end
 
-  test "day_description returns the correct value after attempting to extract it from weather_data" do
-    skip
+  test "day_* methods return correct values after attempting to extract them from weather_data" do
+    place = Place.new
+
+    assert_nil place.day_label(1)
+    assert_nil place.day_low(1)
+    assert_nil place.day_high(1)
+
+    place.weather_data = {days: []}
+    assert_nil place.day_label(1)
+    assert_nil place.day_low(1)
+    assert_nil place.day_high(1)
+
+    place.weather_data = @complete_weather_data
+
+    assert_equal "Sun 08", place.day_label(1)
+    assert_equal "Mon 09", place.day_label(2)
+    assert_equal 72.7, place.day_low(1)
+    assert_equal 67.6, place.day_low(2)
+    assert_equal 88.9, place.day_high(1)
+    assert_equal 81.2, place.day_high(2)
   end
 
-  test "day_low returns the correct value after attempting to extract it from weather_data" do
-    skip
-  end
-
-  test "day_high returns the correct value after attempting to extract it from weather_data" do
-    skip
+  test "attribute weather_data is an empty hash after creating new object" do
+    place = Place.new
+    assert_equal({}, place.weather_data)
   end
 
   test "has_weather_data? returns false if any required component of data is missing" do
     place = Place.new
-
-    place.weather_data = nil
-    refute place.has_weather_data?
-
-    place.weather_data = {}
     refute place.has_weather_data?
 
     place.weather_data = @complete_weather_data.except(:current_temp)

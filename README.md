@@ -4,6 +4,11 @@ An app that retrieves current and forecast weather based on entered address
 
 ### Running tests
 
+```
+rails test # unit and integration tests
+rails test test/system # system tests
+```
+
 ### Deloyment
 
 ### Other details

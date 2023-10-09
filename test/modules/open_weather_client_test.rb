@@ -13,9 +13,9 @@ class OpenWeatherClientTest < ActiveSupport::TestCase
 
     now = Time.now.in_time_zone("Pacific Time (US & Canada)")
 
-    @expected_fahrenheit_data = {current_temp: 87.2, retrieved_at: now, days: [{day: "Sat 07", low: 70.6, high: 87.2}, {day: "Sun 08", low: 72.7, high: 88.9}, {day: "Mon 09", low: 67.6, high: 81.2}, {day: "Tue 10", low: 64.0, high: 73.7}, {day: "Wed 11", low: 65.0, high: 72.3}, {day: "Thu 12", low: 63.6, high: 73.5}, {day: "Fri 13", low: 64.2, high: 74.0}, {day: "Sat 14", low: 63.6, high: 74.6}], cached: false}
+    @expected_fahrenheit_data = {current_temp: 87.2, retrieved_at: now, days: [{day_label: "Sat 07", low: 70.6, high: 87.2}, {day_label: "Sun 08", low: 72.7, high: 88.9}, {day_label: "Mon 09", low: 67.6, high: 81.2}, {day_label: "Tue 10", low: 64.0, high: 73.7}, {day_label: "Wed 11", low: 65.0, high: 72.3}, {day_label: "Thu 12", low: 63.6, high: 73.5}, {day_label: "Fri 13", low: 64.2, high: 74.0}, {day_label: "Sat 14", low: 63.6, high: 74.6}], cached: false}
 
-    @expected_celsius_data = {current_temp: 30.7, retrieved_at: now, days: [{day: "Sat 07", low: 21.5, high: 30.7}, {day: "Sun 08", low: 22.6, high: 31.6}, {day: "Mon 09", low: 19.8, high: 27.4}, {day: "Tue 10", low: 17.8, high: 23.2}, {day: "Wed 11", low: 18.3, high: 22.4}, {day: "Thu 12", low: 17.5, high: 23.1}, {day: "Fri 13", low: 17.9, high: 23.3}, {day: "Sat 14", low: 17.6, high: 23.6}], cached: false}
+    @expected_celsius_data = {current_temp: 30.7, retrieved_at: now, days: [{day_label: "Sat 07", low: 21.5, high: 30.7}, {day_label: "Sun 08", low: 22.6, high: 31.6}, {day_label: "Mon 09", low: 19.8, high: 27.4}, {day_label: "Tue 10", low: 17.8, high: 23.2}, {day_label: "Wed 11", low: 18.3, high: 22.4}, {day_label: "Thu 12", low: 17.5, high: 23.1}, {day_label: "Fri 13", low: 17.9, high: 23.3}, {day_label: "Sat 14", low: 17.6, high: 23.6}], cached: false}
   end
 
   teardown do
