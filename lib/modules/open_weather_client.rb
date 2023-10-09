@@ -74,7 +74,7 @@ module OpenWeatherClient
   end
 
   def self.format_temp(temp, temp_unit)
-    temp = c_to_f(temp) if temp_unit&.to_s == "fahrenheit"
+    temp = c_to_f(temp) unless temp_unit&.to_s == "celsius"
     temp.round(1)
   end
 
@@ -88,7 +88,6 @@ module OpenWeatherClient
   end
 
   def self.current_time
-    t = Time.at((Time.now.to_f / 1.minute).round * 1.minute) # round to nearest minute
-    t.in_time_zone("Pacific Time (US & Canada)") # TODO: swith to end-user's time zone
+    Time.at((Time.now.to_f / 1.minute).round * 1.minute) # round to nearest minute
   end
 end

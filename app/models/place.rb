@@ -39,7 +39,10 @@ class Place
   end
 
   def retrieved_at
-    weather_data[:retrieved_at]
+    t = weather_data[:retrieved_at]
+    return nil unless t
+    t = t.in_time_zone("Pacific Time (US & Canada)") # TODO: swith to end-user's time zone
+    t.strftime("%l:%M%P %Z").strip
   end
 
   def current_day_low
@@ -70,7 +73,7 @@ class Place
   end
 
   def has_weather_data?
-    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:days].present? && weather_data[:days].length == 8
+    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:retrieved_at].present? && weather_data[:days].present? && weather_data[:days].length == 8
 
     weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
   end

@@ -20,10 +20,10 @@ rails test test/system # system tests
 ### Future improvements
 
 - Cacheing is currently done via file system, but should be moved to Redis in production
+- Allow front-end to switch between Fahrenheit and Celsius
 
 ### TODO
 
 - Organize Front End
 - Style Front End
-- Add fahrenheit/celsius switch
 - complete system tests
