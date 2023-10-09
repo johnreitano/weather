@@ -6,7 +6,7 @@ class PlaceTest < ActiveSupport::TestCase
     @required_fields = [:latitude, :longitude, :zipcode, :country]
     @optional_fields = [:city, :state, :temp_unit]
 
-    @complete_weather_data = {current_temp: 87.2, retrieved_at: Time.now, days: [{day_label: "Sat 07", low: 70.6, high: 87.2}, {day_label: "Sun 08", low: 72.7, high: 88.9}, {day_label: "Mon 09", low: 67.6, high: 81.2}, {day_label: "Tue 10", low: 64.0, high: 73.7}, {day_label: "Wed 11", low: 65.0, high: 72.3}, {day_label: "Thu 12", low: 63.6, high: 73.5}, {day_label: "Fri 13", low: 64.2, high: 74.0}, {day_label: "Sat 14", low: 63.6, high: 74.6}], cached: false}
+    @complete_weather_data = {current_temp: 87.2, cached_at: Time.now, days: [{day_label: "Sat 07", low: 70.6, high: 87.2}, {day_label: "Sun 08", low: 72.7, high: 88.9}, {day_label: "Mon 09", low: 67.6, high: 81.2}, {day_label: "Tue 10", low: 64.0, high: 73.7}, {day_label: "Wed 11", low: 65.0, high: 72.3}, {day_label: "Thu 12", low: 63.6, high: 73.5}, {day_label: "Fri 13", low: 64.2, high: 74.0}, {day_label: "Sat 14", low: 63.6, high: 74.6}], retrieved_from_cache: false}
   end
 
   test "passes validation if all required fields are present" do
@@ -78,18 +78,17 @@ class PlaceTest < ActiveSupport::TestCase
     assert_equal 30.0, place.current_temp
   end
 
-  test "retrieved_at returns the correct value in Pacific Time after attempting to extract it from weather_data" do
+  test "cached_at returns the correct value in Pacific Time after attempting to extract it from weather_data" do
     place = Place.new
 
-    assert_nil place.retrieved_at
+    assert_nil place.cached_at
 
-    place.instance_variable_set(:@weather_data, {retrieved_at: nil})
-    assert_nil place.retrieved_at
+    place.instance_variable_set(:@weather_data, {cached_at: nil})
+    assert_nil place.cached_at
 
-    Time.zone = "Eastern Time (US & Canada)"
-    t = Time.zone.local(2023, 9, 1, 12, 0, 0)
-    place.instance_variable_set(:@weather_data, {retrieved_at: t})
-    assert_equal "9:00am PDT", place.retrieved_at
+    t = Time.new(2023, 9, 1, 12, 0, 0, "-04:00") # 12pm EDT
+    place.instance_variable_set(:@weather_data, {cached_at: t})
+    assert_equal "9:00am PDT", place.cached_at
   end
 
   test "current_day_low returns the correct value after attempting to extract it from weather_data" do
@@ -149,7 +148,7 @@ class PlaceTest < ActiveSupport::TestCase
     place.instance_variable_set(:@weather_data, @complete_weather_data.except(:current_temp))
     refute place.has_weather_data?
 
-    place.instance_variable_set(:@weather_data, @complete_weather_data.except(:retrieved_at))
+    place.instance_variable_set(:@weather_data, @complete_weather_data.except(:cached_at))
     refute place.has_weather_data?
 
     place.instance_variable_set(:@weather_data, @complete_weather_data.except(:days))

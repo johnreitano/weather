@@ -38,10 +38,10 @@ class Place
     weather_data[:current_temp]
   end
 
-  def retrieved_at
-    t = weather_data[:retrieved_at]
+  def cached_at
+    t = weather_data[:cached_at]
     return nil unless t
-    t = t.in_time_zone("Pacific Time (US & Canada)") # TODO: swith to end-user's time zone
+    t = t.in_time_zone("Pacific Time (US & Canada)") # TODO: switch to end-user's time zone
     t.strftime("%l:%M%P %Z").strip
   end
 
@@ -73,12 +73,12 @@ class Place
   end
 
   def has_weather_data?
-    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:retrieved_at].present? && weather_data[:days].present? && weather_data[:days].length == 8
+    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:cached_at].present? && weather_data[:days].present? && weather_data[:days].length == 8
 
     weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
   end
 
-  def cached?
-    weather_data[:cached].present?
+  def retrieved_from_cache?
+    weather_data[:retrieved_from_cache].present?
   end
 end

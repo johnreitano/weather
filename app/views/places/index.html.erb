@@ -1,15 +1,15 @@
 <h1>Weather Station</h1>
 <div data-controller="places" data-action="google-maps-loaded@window->places#initGoogle">
-  <%= form_with(model: @place, id: "weather_form", local: true, data: { "places-target": "weather_form" }
+  <%= form_with(model: @place, url: root_path, id: "weather_form", local: true, data: { "places-target": "weather_form" }
 ) do |form| %>
     <div>
-      <%= form.text_field :full_address, data: { "places-target": "full_address" }, class: "w-full" %>
+      <%= form.text_field :full_address, data: { "places-target": "full_address" }, class: "w-full", id: "full_address", disabled: "disabled" %>
       <%= form.hidden_field :latitude, data: { "places-target": "latitude" } %>
       <%= form.hidden_field :longitude, data: { "places-target": "longitude" } %>
       <%= form.hidden_field :city, data: { "places-target": "city" } %>
       <%= form.hidden_field :state, data: { "places-target": "state" } %>
-      <%= form.hidden_field :zipcode, data: { "places-target": "zipcode" } %>
-      <%= form.hidden_field :country, data: { "places-target": "country" } %>
+      <%= form.text_field :zipcode, data: { "places-target": "zipcode" } %>
+      <%= form.text_field :country, data: { "places-target": "country" } %>
     </div>
   <% end %>
   <div>
@@ -19,7 +19,7 @@
     <div data-places-target="weather_data_pending" hidden="hidden">
       Retrieving weather data...
     </div>
-    <div data-places-target="weather_data_error" <%= 'hidden="hidden"' unless @place.errors.any? %> >
+    <div data-places-target="weather_data_error" <%= 'hidden="hidden"' unless @place.errors.any? id="weather_data_error" %> >
       <% if @place.errors[:zipcode].present? %>
         Please try again with an address that has a zipcode.
       <% elsif @place.errors[:country].present? %>
@@ -29,19 +29,36 @@
       <% end%>
     </div>
     <div data-places-target="weather_data_present" <%= 'hidden="hidden"' unless @place.has_weather_data? %> >
-      <div><%= @place.full_address %> at <%= @place.retrieved_at %> <%= @place.cached? ? "(Cached)" : "" %> </div>
-      <div>
-        <div><span>Current Temp:</span><span><%= @place.current_temp %></span></div>
-        <div><span>Today's High:</span><span><%= @place.current_day_low %></span></div>
-        <div><span>Today's Low:</span><span><%= @place.current_day_high %></span></div>
+      <div id="weather_title"><%= @place.full_address %> at <%= @place.cached_at %> <span id="cached_label"><%= "(Cached)" if @place.retrieved_from_cache? %></span></div>
+      <div id="today" class="section">
+        <div class="current_temp">
+          <span class="label">Current Temp</span>
+          <span class="value"><%= @place.current_temp %></span>
+        </div>
+        <div class="day_high">
+          <span class="label">Today's High</span>
+          <span class="value"><%= @place.current_day_high %></span>
+        </div>
+        <div class="day_low">
+          <span class="label">Today's Low</span>
+          <span class="value"><%= @place.current_day_low %></span>
+        </div>
       </div>
-      <div>
-        <div>7-day Forecast</div>
+      <div id="forecast" class="section">
+        <div class="section_title">7-day Forecast</div>
         <% (1..7).each do |i| %>
-          <div>
-            <span><%= @place.day_label(i) %></span>
-            <span>High</span><span><%= @place.day_high(i) %></span>
-            <span>Low</span><span><%= @place.day_low(i) %></span>
+          <div id="day-<%= i %>">
+            <div class="day_label">
+              <span class="label"><%= @place.day_label(i) %></span>
+            </div>
+            <div class="day_high">
+              <span class="label">High</span>
+              <span class="value"><%= @place.day_high(i) %></span>
+            </div>
+            <div class="day_low">
+              <span class="label">Low</span>
+              <span class="value"><%= @place.day_low(i) %></span>
+            </div>
           </div>
         <% end %>
       </div>

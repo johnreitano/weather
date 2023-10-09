@@ -38,12 +38,35 @@ export default class extends Controller {
     )
 
     const form = document.getElementById('weather_form')
+    let fullAddress = this.full_addressTarget
     form.addEventListener('keydown', function (e) {
       if (e.code == 'Enter') {
         console.log('preventing early submit')
         e.preventDefault() // do not submit form yet
+
+        if (e.triggered) {
+          return
+        }
+
+        console.log('simulating pressing of down-arrow and enter keys')
+
+        var ex1 = new Event('keydown')
+        ex1.code = 'ArrowDown'
+        ex1.key = 'ArrowDown'
+        ex1.keyCode = 40
+        fullAddress.dispatchEvent(ex1)
+
+        var ex2 = new Event('keydown')
+        ex2.code = 'Enter'
+        ex2.key = 'Enter'
+        ex2.keyCode = 13
+        ex2.triggered = true
+        fullAddress.dispatchEvent(ex2)
       }
     })
+
+    fullAddress.disabled = false
+    fullAddress.focus()
   }
 
   placeSelected() {

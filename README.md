@@ -27,3 +27,4 @@ rails test test/system # system tests
 - Organize Front End
 - Style Front End
 - complete system tests
+- add reek, rails_best_practices, brakeman
