@@ -2,7 +2,8 @@ class Place
   include ActiveModel::Model
   include ActiveModel::Attributes
 
-  attr_accessor :full_address, :weather_data
+  attr_accessor :full_address
+  attr_reader :weather_data, :open_weather_client
   attribute :latitude, :float
   attribute :longitude, :float
   attribute :city, :string
@@ -20,25 +21,24 @@ class Place
   validates :temp_unit, inclusion: {in: ["fahrenheit", "celsius"], allow_blank: true, message: "must be 'fahrenheit' or 'celsius'"}
 
   def initialize(params = {})
-    self.weather_data = {}
+    @weather_data = {}
+    @open_weather_client = OpenWeatherClient
     super(params)
   end
 
   def retrieve_weather
     return false unless valid?
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
-    self.weather_data, success = open_weather_client.retrieve_weather(opts)
+    @weather_data, success = @open_weather_client.retrieve_weather(opts)
     errors.add(:weather_data, "could not be retrieve from weather service") unless success
     success
   end
 
   def current_temp
-    self.weather_data ||= {}
     weather_data[:current_temp]
   end
 
   def retrieved_at
-    self.weather_data ||= {}
     weather_data[:retrieved_at]
   end
 
@@ -70,18 +70,12 @@ class Place
   end
 
   def has_weather_data?
-    self.weather_data ||= {}
     return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:days].present? && weather_data[:days].length == 8
 
     weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
   end
 
   def cached?
-    self.weather_data ||= {}
     weather_data[:cached].present?
-  end
-
-  def open_weather_client
-    OpenWeatherClient
   end
 end

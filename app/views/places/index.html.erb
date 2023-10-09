@@ -4,30 +4,12 @@
 ) do |form| %>
     <div>
       <%= form.text_field :full_address, data: { "places-target": "full_address" }, class: "w-full" %>
-    </div>
-    <div>
-      <%= form.label :latitude, style: "display: block" %>
-      <%= form.text_field :latitude, data: { "places-target": "latitude" } %>
-    </div>
-    <div>
-      <%= form.label :longitude, style: "display: block" %>
-      <%= form.text_field :longitude, data: { "places-target": "longitude" } %>
-    </div>
-    <div>
-      <%= form.label :city, style: "display: block" %>
-      <%= form.text_field :city, data: { "places-target": "city" } %>
-    </div>
-    <div>
-      <%= form.label :state, style: "display: block" %>
-      <%= form.text_field :state, data: { "places-target": "state" } %>
-    </div>
-    <div>
-      <%= form.label :zipcode, style: "display: block" %>
-      <%= form.text_field :zipcode, data: { "places-target": "zipcode" } %>
-    </div>
-    <div>
-      <%= form.label :country, style: "display: block" %>
-      <%= form.text_field :country, data: { "places-target": "country" } %>
+      <%= form.hidden_field :latitude, data: { "places-target": "latitude" } %>
+      <%= form.hidden_field :longitude, data: { "places-target": "longitude" } %>
+      <%= form.hidden_field :city, data: { "places-target": "city" } %>
+      <%= form.hidden_field :state, data: { "places-target": "state" } %>
+      <%= form.hidden_field :zipcode, data: { "places-target": "zipcode" } %>
+      <%= form.hidden_field :country, data: { "places-target": "country" } %>
     </div>
   <% end %>
   <div>

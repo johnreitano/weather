@@ -25,5 +25,5 @@ rails test test/system # system tests
 
 - Organize Front End
 - Style Front End
-- complete model tests
+- Add fahrenheit/celsius switch
 - complete system tests

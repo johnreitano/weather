@@ -42,9 +42,8 @@ class PlaceTest < ActiveSupport::TestCase
     mock.expect :retrieve_weather, [@complete_weather_data, true], [attrs]
 
     place = Place.new(@all_attributes)
-    place.stub :open_weather_client, mock do
-      place.retrieve_weather
-    end
+    place.instance_variable_set(:@open_weather_client, mock) # use mock instead of OpenWeatherClient
+    place.retrieve_weather
   end
 
   test "retrieve_weather - when call to OpenWeatherClient.retrieve_weather succeeds, stores resulting data in the field 'weather_data'" do
@@ -72,10 +71,10 @@ class PlaceTest < ActiveSupport::TestCase
 
     assert_nil place.current_temp
 
-    place.weather_data = {current_temp: nil}
+    place.instance_variable_set(:@weather_data, {current_temp: nil})
     assert_nil place.current_temp
 
-    place.weather_data = {current_temp: 30.0}
+    place.instance_variable_set(:@weather_data, {current_temp: 30.0})
     assert_equal 30.0, place.current_temp
   end
 
@@ -84,11 +83,11 @@ class PlaceTest < ActiveSupport::TestCase
 
     assert_nil place.retrieved_at
 
-    place.weather_data = {retrieved_at: nil}
+    place.instance_variable_set(:@weather_data, {retrieved_at: nil})
     assert_nil place.retrieved_at
 
     now = Time.now
-    place.weather_data = {retrieved_at: now}
+    place.instance_variable_set(:@weather_data, {retrieved_at: now})
     assert_equal now, place.retrieved_at
   end
 
@@ -97,10 +96,10 @@ class PlaceTest < ActiveSupport::TestCase
 
     assert_nil place.current_day_low
 
-    place.weather_data = {days: []}
+    place.instance_variable_set(:@weather_data, {days: []})
     assert_nil place.current_day_low
 
-    place.weather_data = @complete_weather_data
+    place.instance_variable_set(:@weather_data, @complete_weather_data)
     assert_equal 70.6, place.current_day_low
   end
 
@@ -109,10 +108,10 @@ class PlaceTest < ActiveSupport::TestCase
 
     assert_nil place.current_day_high
 
-    place.weather_data = {days: []}
+    place.instance_variable_set(:@weather_data, {days: []})
     assert_nil place.current_day_high
 
-    place.weather_data = @complete_weather_data
+    place.instance_variable_set(:@weather_data, @complete_weather_data)
     assert_equal 87.2, place.current_day_high
   end
 
@@ -123,13 +122,12 @@ class PlaceTest < ActiveSupport::TestCase
     assert_nil place.day_low(1)
     assert_nil place.day_high(1)
 
-    place.weather_data = {days: []}
+    place.instance_variable_set(:@weather_data, {days: []})
     assert_nil place.day_label(1)
     assert_nil place.day_low(1)
     assert_nil place.day_high(1)
 
-    place.weather_data = @complete_weather_data
-
+    place.instance_variable_set(:@weather_data, @complete_weather_data)
     assert_equal "Sun 08", place.day_label(1)
     assert_equal "Mon 09", place.day_label(2)
     assert_equal 72.7, place.day_low(1)
@@ -147,24 +145,25 @@ class PlaceTest < ActiveSupport::TestCase
     place = Place.new
     refute place.has_weather_data?
 
-    place.weather_data = @complete_weather_data.except(:current_temp)
+    place.instance_variable_set(:@weather_data, @complete_weather_data.except(:current_temp))
     refute place.has_weather_data?
 
-    place.weather_data = @complete_weather_data.except(:days)
+    place.instance_variable_set(:@weather_data, @complete_weather_data.except(:days))
     refute place.has_weather_data?
 
-    place.weather_data = @complete_weather_data.dup
-    place.weather_data[:days] = []
+    place.instance_variable_set(:@weather_data, @complete_weather_data.merge(days: []))
     refute place.has_weather_data?
 
-    place.weather_data = @complete_weather_data.dup
-    place.weather_data[:days].pop
+    # remove last item from forecast data
+    partial_weather_data = @complete_weather_data.dup
+    partial_weather_data[:days].pop
+    place.instance_variable_set(:@weather_data, partial_weather_data)
     refute place.has_weather_data?
   end
 
   test "has_weather_data? returns true if all required components of data are present" do
     place = Place.new
-    place.weather_data = @complete_weather_data
+    place.instance_variable_set(:@weather_data, @complete_weather_data)
     assert place.has_weather_data?
   end
 end
