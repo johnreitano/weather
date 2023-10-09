@@ -70,6 +70,7 @@ group :development do
   # gem "htmlbeautifier"
   gem "brakeman"
   gem "rails_best_practices"
+  gem "reek"
 end
 
 group :test do

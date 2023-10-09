@@ -46,11 +46,11 @@ module OpenWeatherClient
     {
       current_temp: kelvin_to_celsius(raw_data.dig("current", "temp")),
       cached_at: current_time, # TODO: get this from OpenWeather
-      days: raw_data["daily"][0..7].each_with_index.map do |d, i|
+      days: raw_data["daily"][0..7].map do |day|
         {
-          day_label: d["dt"].strftime("%a %d"),
-          low: kelvin_to_celsius(d.dig("temp", "min")),
-          high: kelvin_to_celsius(d.dig("temp", "max"))
+          day_label: day["dt"].strftime("%a %d"),
+          low: kelvin_to_celsius(day.dig("temp", "min")),
+          high: kelvin_to_celsius(day.dig("temp", "max"))
         }
       end
     }
@@ -76,9 +76,9 @@ module OpenWeatherClient
     data = data.dup
     data[:current_temp] = format_temp(data[:current_temp], temp_unit)
     data[:days] = data[:days].dup
-    data[:days].each_with_index do |d, i|
-      data[:days][i][:low] = format_temp(data[:days][i][:low], temp_unit)
-      data[:days][i][:high] = format_temp(data[:days][i][:high], temp_unit)
+    data[:days].each_with_index do |d, day_index|
+      data[:days][day_index][:low] = format_temp(data[:days][day_index][:low], temp_unit)
+      data[:days][day_index][:high] = format_temp(data[:days][day_index][:high], temp_unit)
     end
     data
   end

@@ -1,3 +1,4 @@
+# Place repreents a place with an address (including a zipcode and country); this model is is used to validate an address and retrieve associated weather data from an external API
 class Place
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -53,28 +54,26 @@ class Place
     day_high(0)
   end
 
-  def day_label(i)
-    day(i)[:day_label]
+  def day_label(day_index)
+    day(day_index)[:day_label]
   end
 
-  def day_low(i)
-    day(i)[:low]
+  def day_low(day_index)
+    day(day_index)[:low]
   end
 
-  def day_high(i)
-    day(i)[:high]
+  def day_high(day_index)
+    day(day_index)[:high]
   end
 
-  def day(i)
-    self.weather_data ||= {}
+  def day(day_index)
     days = weather_data[:days] || []
-    return {} if i > days.length - 1
-    days[i]
+    return {} if day_index > days.length - 1
+    days[day_index]
   end
 
   def has_weather_data?
-    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:cached_at].present? && weather_data[:days].present? && weather_data[:days].length == 8
-
+    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:cached_at].present? && weather_data[:days]&.length == 8
     weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
   end
 
