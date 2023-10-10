@@ -71,6 +71,7 @@ group :development do
   gem "brakeman"
   gem "rails_best_practices"
   gem "reek"
+  gem "foreman"
 end
 
 group :test do
