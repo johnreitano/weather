@@ -7,7 +7,7 @@ class PlacesController < ApplicationController
   # POST /places or /places.json
   def create
     @place = Place.new(place_params)
-    success = @place.retrieve_weather
+    success = @place.validate_request_and_retrieve_weather_data
     render :index, status: success ? :created : :unprocessable_entity
   end
 

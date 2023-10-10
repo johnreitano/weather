@@ -30,37 +30,39 @@ class PlaceTest < ActiveSupport::TestCase
     end
   end
 
-  test "retrieve_weather returns false if place is invalid" do
+  test "validate_request_and_retrieve_weather_data returns false if place is invalid" do
     place = Place.new(@all_attributes.except(:latitude))
     refute place.valid?
-    refute place.retrieve_weather
+    refute place.validate_request_and_retrieve_weather_data
   end
 
-  test "retrieve_weather - calls OpenWeatherClient.retrieve_weather" do
-    mock = Minitest::Mock.new
-    attrs = @all_attributes.slice(:latitude, :longitude, :city, :state, :zipcode, :country, :temp_unit)
-    mock.expect :retrieve_weather, [@complete_weather_data, true], [attrs]
-
+  test "validate_request_and_retrieve_weather_data - calls method retrieve_weather_data (from concern OpenWeatherDataRetriever)" do
+    @@retrieve_weather_data_called = false
     place = Place.new(@all_attributes)
-    place.instance_variable_set(:@open_weather_client, mock) # use mock instead of OpenWeatherClient
-    place.retrieve_weather
+    def place.retrieve_weather_data(opts)
+      @@retrieve_weather_data_called = true
+      [{}, true]
+    end
+    assert place.valid?
+    place.validate_request_and_retrieve_weather_data
+    assert @@retrieve_weather_data_called
   end
 
-  test "retrieve_weather - when call to OpenWeatherClient.retrieve_weather succeeds, stores resulting data in the field 'weather_data'" do
+  test "validate_request_and_retrieve_weather_data - when call to method retrieve_weather_data (from concern OpenWeatherDataRetriever) succeeds, stores resulting data in the field 'weather_data'" do
     place = Place.new(@all_attributes)
     refute place.has_weather_data?
-    OpenWeatherClient.stub :retrieve_weather, [@complete_weather_data, true] do
-      assert place.retrieve_weather
+    place.stub :retrieve_weather_data, [@complete_weather_data, true] do
+      assert place.validate_request_and_retrieve_weather_data
       assert place.has_weather_data?
       assert_equal @complete_weather_data, place.weather_data
     end
   end
 
-  test "retrieve_weather - when call to OpenWeatherClient.retrieve_weather fails, stores empty hash in 'weather_data'" do
+  test "validate_request_and_retrieve_weather_data - when call to OpenWeatherClient.validate_request_and_retrieve_weather_data fails, stores empty hash in 'weather_data'" do
     place = Place.new(@all_attributes)
     refute place.has_weather_data?
-    OpenWeatherClient.stub :retrieve_weather, [{}, false] do
-      refute place.retrieve_weather
+    place.stub :retrieve_weather_data, [{}, false] do
+      refute place.validate_request_and_retrieve_weather_data
       refute place.has_weather_data?
       assert_equal({}, place.weather_data)
     end

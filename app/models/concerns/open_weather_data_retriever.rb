@@ -1,7 +1,8 @@
-module OpenWeatherClient
+module OpenWeatherDataRetriever
+  extend ActiveSupport::Concern
   WEATHER_CACHE_EXPIRATION = 30.minutes
 
-  def self.retrieve_weather(opts)
+  def retrieve_weather_data(opts)
     return [{}, false] unless all_required_opts_present?(opts)
 
     unformatted_data, success = retrieve_unformatted_data(opts)
@@ -11,10 +12,10 @@ module OpenWeatherClient
     [formatted_data, true]
   end
 
-  private_class_method
+  private
 
-  def self.all_required_opts_present?(opts)
-    %w[latitude longitude zipcode country].all? do |key|
+  def all_required_opts_present?(opts)
+    %w[latitude longitude zipcode country open_weather_api_key].all? do |key|
       if opts[key.to_sym].present?
         true
       else
@@ -24,14 +25,18 @@ module OpenWeatherClient
     end
   end
 
-  def self.cache_key(opts)
+  def cache_key(opts)
     "WEATHER/#{opts[:city]}/#{opts[:state]}/#{opts[:zip]}/#{opts[:country]}"
   end
 
-  def self.download_raw_data(opts)
-    @client ||= OpenWeather::Client.new(api_key: Rails.application.credentials.dig("open_weather_api_key"))
+  def open_weather_client(api_key)
+    @open_weather_client ||= OpenWeather::Client.new(api_key: api_key)
+  end
+
+  def download_raw_data(opts)
     begin
-      data = @client.one_call(lat: opts[:latitude], lon: opts[:longitude])
+      client = open_weather_client(opts[:open_weather_api_key])
+      data = client.one_call(lat: opts[:latitude], lon: opts[:longitude])
     rescue OpenWeather::Errors::Fault => e
       Rails.logger.warn("received fault from OpenWeather: #{e}")
       return [{}, false]
@@ -42,7 +47,7 @@ module OpenWeatherClient
     [data, true]
   end
 
-  def self.prepare_cacheable_data(raw_data)
+  def prepare_cacheable_data(raw_data)
     {
       current_temp: kelvin_to_celsius(raw_data.dig("current", "temp")),
       cached_at: current_time,
@@ -56,7 +61,7 @@ module OpenWeatherClient
     }
   end
 
-  def self.retrieve_unformatted_data(opts)
+  def retrieve_unformatted_data(opts)
     key = cache_key(opts)
     data = Rails.cache.read(key)
     if data
@@ -72,7 +77,7 @@ module OpenWeatherClient
     [data, true]
   end
 
-  def self.format_temps(data, temp_unit)
+  def format_temps(data, temp_unit)
     data = data.dup
     data[:current_temp] = format_temp(data[:current_temp], temp_unit)
     data[:days] = data[:days].dup
@@ -83,21 +88,21 @@ module OpenWeatherClient
     data
   end
 
-  def self.format_temp(temp, temp_unit)
+  def format_temp(temp, temp_unit)
     temp = celsius_to_fahrenheit(temp) unless temp_unit&.to_s == "celsius"
     temp.round
   end
 
   ZERO_CELSIUS_IN_KELVIN = -273.15
-  def self.kelvin_to_celsius(temp_k)
+  def kelvin_to_celsius(temp_k)
     (temp_k.to_f + ZERO_CELSIUS_IN_KELVIN).round(2)
   end
 
-  def self.celsius_to_fahrenheit(temp_c)
+  def celsius_to_fahrenheit(temp_c)
     (temp_c.to_f * 9.0 / 5.0 + 32.0).round(2)
   end
 
-  def self.current_time
-    Time.at((Time.now.to_f / 1.minute).round * 1.minute) # round to nearest minute
+  def current_time
+    Time.now
   end
 end
