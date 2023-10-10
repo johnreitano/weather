@@ -45,7 +45,7 @@ module OpenWeatherClient
   def self.prepare_cacheable_data(raw_data)
     {
       current_temp: kelvin_to_celsius(raw_data.dig("current", "temp")),
-      cached_at: current_time, # TODO: get this from OpenWeather
+      cached_at: current_time,
       days: raw_data["daily"][0..7].map do |day|
         {
           day_label: day["dt"].strftime("%a %d"),

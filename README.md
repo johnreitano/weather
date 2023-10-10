@@ -61,4 +61,5 @@ Currently automatically deployed to render.com when commit added to main branch 
 
 - Cacheing is currently done via the file system, but should be moved to Redis in production
 - Allow front-end to switch between Fahrenheit and Celsius
+- Show times in end-user's time zone instead of in Pacific Time.
 - I've done some testing in Chrome, Firefox and Safari on Mac, and Chrome and Safari on IOS, but further testing is needed.

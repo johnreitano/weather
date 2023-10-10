@@ -15,7 +15,7 @@ threads min_threads_count, max_threads_count
 if ENV["RAILS_ENV"] == "production"
   workers ENV.fetch("WEB_CONCURRENCY") { 4 }
 end
-preload_app! # TODO: check this
+preload_app!
 
 # Specifies the `worker_timeout` threshold that Puma will use to wait before
 # terminating a worker in development environments.

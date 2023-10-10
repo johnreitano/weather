@@ -42,7 +42,7 @@ class Place
   def cached_at
     t = weather_data[:cached_at]
     return nil unless t
-    t = t.in_time_zone("Pacific Time (US & Canada)") # TODO: switch to end-user's time zone
+    t = t.in_time_zone("Pacific Time (US & Canada)")
     t.strftime("%l:%M%P %Z").strip
   end
 
