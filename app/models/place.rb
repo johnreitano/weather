@@ -5,7 +5,7 @@ class Place
   include OpenWeatherDataRetriever
 
   attr_accessor :full_address
-  attr_reader :weather_data
+  attr_reader :weather_data_error
   attribute :latitude, :float
   attribute :longitude, :float
   attribute :city, :string
@@ -22,62 +22,11 @@ class Place
   validates :country, presence: true
   validates :temp_unit, inclusion: {in: ["fahrenheit", "celsius"], allow_blank: true, message: "must be 'fahrenheit' or 'celsius'"}
 
-  def initialize(params = {})
-    @weather_data = {}
-    super(params)
-  end
-
   def validate_request_and_retrieve_weather_data
     return false unless valid?
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
-    @weather_data, success = retrieve_weather_data(opts.merge(open_weather_api_key: Rails.application.credentials.dig(:open_weather_api_key)))
-    errors.add(:weather_data, "could not be retrieved from weather service") unless success
+    success = weather_data.retrieve(opts.merge(open_weather_api_key: Rails.application.credentials.dig(:open_weather_api_key)))
+    errors.add(:weather_data_error, "could not be retrieved from weather service") unless success
     success
-  end
-
-  def current_temp
-    weather_data[:current_temp]
-  end
-
-  def cached_at
-    t = weather_data[:cached_at]
-    return nil unless t
-    t = t.in_time_zone("Pacific Time (US & Canada)")
-    t.strftime("%l:%M%P %Z").strip
-  end
-
-  def current_day_low
-    day_low(0)
-  end
-
-  def current_day_high
-    day_high(0)
-  end
-
-  def day_label(day_index)
-    day(day_index)[:day_label]
-  end
-
-  def day_low(day_index)
-    day(day_index)[:low]
-  end
-
-  def day_high(day_index)
-    day(day_index)[:high]
-  end
-
-  def day(day_index)
-    days = weather_data[:days] || []
-    return {} if day_index > days.length - 1
-    days[day_index]
-  end
-
-  def has_weather_data?
-    return false unless weather_data.present? && weather_data[:current_temp].present? && weather_data[:cached_at].present? && weather_data[:days]&.length == 8
-    weather_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
-  end
-
-  def retrieved_from_cache?
-    weather_data[:retrieved_from_cache].present?
   end
 end

@@ -30,10 +30,10 @@
           Unable to retrieve weather data from OpenWeather. Please try again later.
         <% end%>
       </div>
-      <div data-places-target="weather_data_present" id="weather_data_present" <%= 'hidden="hidden"' unless @place.has_weather_data? %> >
+      <div data-places-target="weather_data_present" id="weather_data_present" <%= 'hidden="hidden"' unless @weather_data.available? %> >
         <div id="weather_title" class="w-full my-4">
-          <span><%= @place.full_address %> at <%= @place.cached_at %></span>
-          <span id="cached_label"><%= "(Cached)" if @place.retrieved_from_cache? %></span>
+          <span><%= @place.full_address %> at <%= @weather_data.cached_at %></span>
+          <span id="cached_label"><%= "(Cached)" if @weather_data.retrieved_from_cache? %></span>
         </div>
         <table class="table-auto w-2/3">
           <tbody class="border-b-2 border-slate-600 divide-y divide-slate-200" id="today" class="section mb-10">
@@ -42,7 +42,7 @@
                 <span class="label">Current Temp</span>
               </td>
               <td class="px-5 w-1/3 day_high_low">
-                <span class="value font-bold text-xl"><%= @place.current_temp %></span>
+                <span class="value font-bold text-xl"><%= @weather_data.current_temp %></span>
               </td>
             </tr>
             <tr class="my-20 today_high_low">
@@ -50,7 +50,7 @@
                 Today's High/Low
               </td>
               <td class="px-5 w-1/3 day_high_low">
-                <span class="value font-bold text-xl"><%= @place.current_day_high %></span>/<span class="value"><%= @place.current_day_low %></span>
+                <span class="value font-bold text-xl"><%= @weather_data.current_day_high %></span>/<span class="value"><%= @weather_data.current_day_low %></span>
               </td>
             </tr>
           </tbody>
@@ -58,10 +58,10 @@
             <% (1..7).each do |i| %>
               <tr id="day-<%= i %>">
                 <td class="px-5 day_label">
-                  <span class="label"><%= @place.day_label(i) %></span>
+                  <span class="label"><%= @weather_data.day_label(i) %></span>
                 </td>
                 <td class="px-5 day_high_low">
-                  <span class="value font-bold text-xl"><%= @place.day_high(i) %></span>/<span class="value"><%= @place.day_low(i) %></span>
+                  <span class="value font-bold text-xl"><%= @weather_data.day_high(i) %></span>/<span class="value"><%= @weather_data.day_low(i) %></span>
                 </td>
               </tr>
             <% end %>

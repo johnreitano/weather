@@ -28,12 +28,12 @@ There following two external data sources are used:
     - passes ths data to an instance of the model Place
     - updates the home page based on the results from the model
   - The model `Place` (`app/models/place.rb`) does the following:
-    - receives address data originating the home page. Instead a save method, this model uses the method `validate_request_and_retrieve_weather_data`.
-    - passes this data to the `retrieve_weather_data` method in the concern `OpenWeatherDataRetriever`
-    - stores the resulting data in memory
-    - returns a boolean indicating success or failure.
+    - receives address data originating the home page.
+    - validates the address
+    - passes the adddress to the `retrieve` method of the classs `OpenWeatherDataRetriever::WeatherData` (see below)
+    - returns the boolean indicating success or failure of the `retrieve` method
     - does NOT represent a subclass of `ActiveRecord::Base`. Instead, it includes the Rails modules `ActiveModel::Model` and `ActiveModel::Attributes` to do validation.
-  - The method `retrieve_weather_data` in the convern `OpenWeatherDataRetriever` (`app/models/conncerns/open_weather_data_retriever.rb`) does the following:
+  - The concern `OpenWeatherDataRetriever` (`app/models/conncerns/open_weather_data_retriever.rb`) does most of the work of this app. The method `retrieve` in the class `OpenWeatherDataRetriever::WeatherData` does the following:
     - receives the geocoded address
     - retrieves the associated weather data for the current day and a 7-day forecast, returning this data in nested Ruby Hash.
     - Uses the cached value of data for a particular zipcode if available. This cached data is available for 30 minutes.
