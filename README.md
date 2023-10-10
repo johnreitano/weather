@@ -15,7 +15,7 @@ There following two external data sources are used:
 
 ### Internal Design
 
-- The app is built with Rails 7 using Tailwind using Ruby 3.2.
+- The app is built with Rails 7 using Ruby 3.2 and Tailwind.
 - The app doesn't use a traditional Rails database, but it does cache weather data in the Rails cache. (See "Scaling" below.)
 - Most of the work of the app is done in the following 4 parts of the app:
   - The app's home page makes use of a Javascript "controller" file (`app/javascript/controllers/places_controller.js`), which does the following:
@@ -55,7 +55,7 @@ rails test test/system # system tests
 
 ### Deloyment
 
-Currently automatically deployed to render.com when git commit added to main branch.
+Currently automatically deployed to render.com when commit added to main branch of this repo.
 
 ### Possible improvements
 
