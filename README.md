@@ -1,6 +1,17 @@
-# Weather
+# Weather Station
 
 An app that displays current and forecast weather for an address entered by the user.
+
+# Installing and running the app
+
+```
+git clone git@github.com:johnreitano/weather.git
+cd weather
+bundle install
+bin/dev
+```
+
+Then visit http://localhost:3000
 
 ### Live Demo
 
