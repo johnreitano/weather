@@ -31,7 +31,7 @@ class Place
     return false unless valid?
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
     @weather_data, success = @open_weather_client.retrieve_weather(opts)
-    errors.add(:weather_data, "could not be retrieve from weather service") unless success
+    errors.add(:weather_data, "could not be retrieved from weather service") unless success
     success
   end
 

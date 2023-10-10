@@ -1,5 +1,5 @@
 module OpenWeatherClient
-  WEATHER_CACHE_EXPIRATION = 20.seconds
+  WEATHER_CACHE_EXPIRATION = 30.minutes
 
   def self.retrieve_weather(opts)
     return [{}, false] unless all_required_opts_present?(opts)
