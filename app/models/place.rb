@@ -25,7 +25,8 @@ class Place
   def validate_request_and_retrieve_weather_data
     return false unless valid?
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
-    success = weather_data.retrieve(opts.merge(open_weather_api_key: Rails.application.credentials.dig(:open_weather_api_key)))
+    api_key = Rails.application.credentials.dig(:open_weather_api_key)
+    success = weather_data.retrieve(opts.merge(open_weather_api_key: api_key))
     errors.add(:weather_data_error, "could not be retrieved from weather service") unless success
     success
   end
