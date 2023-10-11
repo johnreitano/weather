@@ -12,69 +12,61 @@ module OpenWeatherDataRetriever
   end
 
   class WeatherData
-    attr_reader :formatted_data
+    attr_reader :retrieved_data
 
     def initialize
-      @formatted_data = {}
+      @retrieved_data = {}
     end
 
     def retrieve(opts)
-      @formatted_data = {}
-
+      @retrieved_data = {}
       return false unless all_required_opts_present?(opts)
 
-      unformatted_data, success = retrieve_unformatted_data(opts)
-      return false unless success
-
-      @formatted_data = format_temps(unformatted_data, opts[:temp_unit])
-      true
+      @retrieved_data, success = retrieve_data_from_cache_or_open_weather(opts)
+      success
     end
 
-    def current_temp
-      formatted_data[:current_temp]
+    def current_temp(temp_unit = "fahrenheit")
+      to_faharenheit_or_celsius(retrieved_data[:current_temp], temp_unit)
     end
 
-    def cached_at
-      # TODO: move this to format_temps
-      t = formatted_data[:cached_at]
-      return nil unless t
-      t = t.in_time_zone("Pacific Time (US & Canada)")
-      t.strftime("%l:%M%P %Z").strip
+    def cached_at(time_zone = "Pacific Time (US & Canada)")
+      retrieved_data[:cached_at]&.in_time_zone(time_zone)&.strftime("%l:%M%P %Z")&.strip
     end
 
-    def current_day_low
-      day_low(0)
+    def current_day_low(temp_unit = "fahrenheit")
+      day_low(0, temp_unit)
     end
 
-    def current_day_high
-      day_high(0)
+    def current_day_high(temp_unit = "fahrenheit")
+      day_high(0, temp_unit)
     end
 
     def day_label(day_index)
       day(day_index)[:day_label]
     end
 
-    def day_low(day_index)
-      day(day_index)[:low]
+    def day_low(day_index, temp_unit = "fahrenheit")
+      to_faharenheit_or_celsius(day(day_index)[:low], temp_unit)
     end
 
-    def day_high(day_index)
-      day(day_index)[:high]
+    def day_high(day_index, temp_unit = "fahrenheit")
+      to_faharenheit_or_celsius(day(day_index)[:high], temp_unit)
     end
 
     def available?
-      return false unless formatted_data.present? && formatted_data[:current_temp].present? && formatted_data[:cached_at].present? && formatted_data[:days]&.length == 8
-      formatted_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
+      return false unless retrieved_data.present? && retrieved_data[:current_temp].present? && retrieved_data[:cached_at].present? && retrieved_data[:days]&.length == 8
+      retrieved_data[:days].all? { |d| d[:day_label].present? && d[:high].present? && d[:low].present? }
     end
 
     def retrieved_from_cache?
-      formatted_data[:retrieved_from_cache].present?
+      retrieved_data[:retrieved_from_cache].present?
     end
 
     private
 
     def day(day_index)
-      days = formatted_data[:days] || []
+      days = retrieved_data[:days] || []
       return {} if day_index > days.length - 1
       days[day_index]
     end
@@ -98,10 +90,17 @@ module OpenWeatherDataRetriever
       @open_weather_client ||= OpenWeather::Client.new(api_key: api_key)
     end
 
+    def download_and_format_data(opts)
+      raw_data, success = download_raw_data(opts)
+      return [{}, false] unless success
+
+      [format_data(raw_data), true]
+    end
+
     def download_raw_data(opts)
       begin
         client = open_weather_client(opts[:open_weather_api_key])
-        data = client.one_call(lat: opts[:latitude], lon: opts[:longitude])
+        raw_data = client.one_call(lat: opts[:latitude], lon: opts[:longitude])
       rescue OpenWeather::Errors::Fault => e
         Rails.logger.warn("received fault from OpenWeather: #{e}")
         return [{}, false]
@@ -109,10 +108,10 @@ module OpenWeatherDataRetriever
         Rails.logger.warn("received connection failed error when attempting to connect to OpenWeather: #{e}")
         return [{}, false]
       end
-      [data, true]
+      [raw_data, true]
     end
 
-    def prepare_cacheable_data(raw_data)
+    def format_data(raw_data)
       {
         current_temp: kelvin_to_celsius(raw_data.dig("current", "temp")),
         cached_at: Time.now,
@@ -126,45 +125,32 @@ module OpenWeatherDataRetriever
       }
     end
 
-    def retrieve_unformatted_data(opts)
+    def retrieve_data_from_cache_or_open_weather(opts)
       key = cache_key(opts)
-      data = Rails.cache.read(key)
-      if data
-        data[:retrieved_from_cache] = true
-      else
-        raw_data, success = download_raw_data(opts)
-        return [{}, false] unless success
+      cached_data = Rails.cache.read(key)
+      return [cached_data.merge(retrieved_from_cache: true), true] if cached_data
 
-        data = prepare_cacheable_data(raw_data)
-        Rails.cache.write(key, data, expires_in: WEATHER_CACHE_EXPIRATION)
-        data[:retrieved_from_cache] = false
-      end
-      [data, true]
+      formatted_data, success = download_and_format_data(opts)
+      return [{}, false] unless success
+
+      Rails.cache.write(key, formatted_data, expires_in: WEATHER_CACHE_EXPIRATION)
+      [formatted_data.merge(retrieved_from_cache: false), true]
     end
 
-    def format_temps(data, temp_unit)
-      data = data.dup
-      data[:current_temp] = format_temp(data[:current_temp], temp_unit)
-      data[:days] = data[:days].dup
-      data[:days].each_with_index do |d, day_index|
-        data[:days][day_index][:low] = format_temp(data[:days][day_index][:low], temp_unit)
-        data[:days][day_index][:high] = format_temp(data[:days][day_index][:high], temp_unit)
-      end
-      data
-    end
-
-    def format_temp(temp, temp_unit)
+    def to_faharenheit_or_celsius(temp, temp_unit)
       temp = celsius_to_fahrenheit(temp) unless temp_unit&.to_s == "celsius"
-      temp.round
+      temp&.round(1)
     end
 
-    ZERO_CELSIUS_IN_KELVIN = -273.15
+    ZERO_CELSIUS_IN_KELVIN = 273.15
     def kelvin_to_celsius(temp_k)
-      (temp_k.to_f + ZERO_CELSIUS_IN_KELVIN).round(2)
+      return nil if temp_k.nil?
+      (temp_k.to_f - ZERO_CELSIUS_IN_KELVIN).round(1)
     end
 
     def celsius_to_fahrenheit(temp_c)
-      (temp_c.to_f * 9.0 / 5.0 + 32.0).round(2)
+      return nil if temp_c.nil?
+      (temp_c.to_f * 9.0 / 5.0 + 32.0).round(1)
     end
   end
 end

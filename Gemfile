@@ -79,4 +79,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   gem "timecop"
+  gem "minitest-stub_any_instance"
 end

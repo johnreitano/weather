@@ -25,33 +25,26 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
 
     @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA", zipcode: "91913", country: "US", temp_unit: "fahrenheit", open_weather_api_key: "123"}
 
-    @now = Time.now
-    @expected_fahrenheit_data = {current_temp: 87, cached_at: @now, days: [{day_label: "Sat 07", low: 71, high: 89}, {day_label: "Sun 08", low: 73, high: 89}, {day_label: "Mon 09", low: 68, high: 81}, {day_label: "Tue 10", low: 64, high: 74}, {day_label: "Wed 11", low: 65, high: 72}, {day_label: "Thu 12", low: 64, high: 74}, {day_label: "Fri 13", low: 64, high: 74}, {day_label: "Sat 14", low: 64, high: 75}], retrieved_from_cache: false}
+    @expected_celsius_data = {current_temp: 30.7, cached_at: Time.now, days: [{day_label: "Sat 07", low: 21.5, high: 31.7}, {day_label: "Sun 08", low: 22.6, high: 31.6}, {day_label: "Mon 09", low: 19.8, high: 27.4}, {day_label: "Tue 10", low: 17.8, high: 23.2}, {day_label: "Wed 11", low: 18.3, high: 22.4}, {day_label: "Thu 12", low: 17.5, high: 23.1}, {day_label: "Fri 13", low: 17.9, high: 23.3}, {day_label: "Sat 14", low: 17.6, high: 23.6}], retrieved_from_cache: false}
   end
 
   teardown do
     Timecop.return
   end
 
-  test "retrieve weather (fahrenheit)" do
+  test "retrieve weather data" do
     assert @model.weather_data.retrieve(@request_opts)
     assert @model.weather_data.available?
-    assert_equal @expected_fahrenheit_data, @model.weather_data.instance_variable_get(:@formatted_data)
-  end
-
-  test "retrieve weather (celsius)" do
-    assert @model.weather_data.retrieve(@request_opts.merge(temp_unit: "celsius"))
-    assert @model.weather_data.available?
-    expected_celsius_data = {current_temp: 31, cached_at: @now, days: [{day_label: "Sat 07", low: 21, high: 32}, {day_label: "Sun 08", low: 23, high: 32}, {day_label: "Mon 09", low: 20, high: 27}, {day_label: "Tue 10", low: 18, high: 23}, {day_label: "Wed 11", low: 18, high: 22}, {day_label: "Thu 12", low: 18, high: 23}, {day_label: "Fri 13", low: 18, high: 23}, {day_label: "Sat 14", low: 18, high: 24}], retrieved_from_cache: false}
-    assert_equal expected_celsius_data, @model.weather_data.instance_variable_get(:@formatted_data)
+    assert_equal @expected_celsius_data, @model.weather_data.instance_variable_get(:@retrieved_data)
   end
 
   test "should return cached result on second request" do
     assert @model.weather_data.retrieve(@request_opts)
     assert @model.weather_data.available?
+    refute @model.weather_data.retrieved_from_cache?
     assert @model.weather_data.retrieve(@request_opts)
     assert @model.weather_data.available?
-    assert_equal @expected_fahrenheit_data.merge(retrieved_from_cache: true), @model.weather_data.instance_variable_get(:@formatted_data)
+    assert @model.weather_data.retrieved_from_cache?
   end
 
   test "should fail gracefully when required field is missing" do
@@ -76,7 +69,7 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
   test "current_temp returns the correct value" do
     assert_nil @model.weather_data.current_temp
     assert @model.weather_data.retrieve(@request_opts)
-    assert_equal 87, @model.weather_data.current_temp
+    assert_equal 87.3, @model.weather_data.current_temp
   end
 
   test "cached_at returns the correct value in Pacific Time" do
@@ -88,13 +81,13 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
   test "current_day_low returns the correct value" do
     assert_nil @model.weather_data.current_day_low
     assert @model.weather_data.retrieve(@request_opts)
-    assert_equal 71, @model.weather_data.current_day_low
+    assert_equal 70.7, @model.weather_data.current_day_low
   end
 
   test "current_day_high returns the correct value" do
     assert_nil @model.weather_data.current_day_high
     assert @model.weather_data.retrieve(@request_opts)
-    assert_equal 89, @model.weather_data.current_day_high
+    assert_equal 89.1, @model.weather_data.current_day_high
   end
 
   test "day_* methods return correct values" do
@@ -105,10 +98,10 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
     assert @model.weather_data.retrieve(@request_opts)
     assert_equal "Sun 08", @model.weather_data.day_label(1)
     assert_equal "Mon 09", @model.weather_data.day_label(2)
-    assert_equal 73, @model.weather_data.day_low(1)
-    assert_equal 68, @model.weather_data.day_low(2)
-    assert_equal 89, @model.weather_data.day_high(1)
-    assert_equal 81, @model.weather_data.day_high(2)
+    assert_equal 72.7, @model.weather_data.day_low(1)
+    assert_equal 67.6, @model.weather_data.day_low(2)
+    assert_equal 88.9, @model.weather_data.day_high(1)
+    assert_equal 81.3, @model.weather_data.day_high(2)
   end
 
   test "available? returns true if all required component of data present, false otherwise" do
@@ -118,16 +111,16 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
     assert weather_data.retrieve(@request_opts)
     assert weather_data.available?
 
-    weather_data.instance_variable_set(:@formatted_data, complete_weather_data.except(:current_temp))
+    weather_data.instance_variable_set(:@retrieved_data, complete_weather_data.except(:current_temp))
     refute weather_data.available?
 
-    weather_data.instance_variable_set(:@formatted_data, complete_weather_data.except(:cached_at))
+    weather_data.instance_variable_set(:@retrieved_data, complete_weather_data.except(:cached_at))
     refute weather_data.available?
 
-    weather_data.instance_variable_set(:@formatted_data, complete_weather_data.except(:days))
+    weather_data.instance_variable_set(:@retrieved_data, complete_weather_data.except(:days))
     refute weather_data.available?
 
-    weather_data.instance_variable_set(:@formatted_data, complete_weather_data.merge(days: []))
+    weather_data.instance_variable_set(:@retrieved_data, complete_weather_data.merge(days: []))
     refute weather_data.available?
 
     # remove last item from forecast data
