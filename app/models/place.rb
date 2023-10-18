@@ -4,8 +4,9 @@ class Place
   include ActiveModel::Attributes
   include OpenWeatherDataRetriever
 
+  open_weather_data :weather_data
+
   attr_accessor :full_address
-  attr_reader :weather_data_error
   attribute :latitude, :float
   attribute :longitude, :float
   attribute :city, :string
@@ -27,7 +28,7 @@ class Place
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
     api_key = Rails.application.credentials.dig(:open_weather_api_key)
     success = weather_data.retrieve(opts.merge(open_weather_api_key: api_key))
-    errors.add(:weather_data_error, "could not be retrieved from weather service") unless success
+    errors.add(:weather_data, "could not be retrieved from weather service") unless success
     success
   end
 end

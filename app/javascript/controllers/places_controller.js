@@ -42,20 +42,19 @@ export default class extends Controller {
     form.addEventListener('keydown', function (e) {
       if (e.code == 'Enter') {
         console.log('preventing early submit')
-        e.preventDefault() // do not submit form yet
+        e.preventDefault() // postpone submitting form until user has selected a geocoded place from list
 
         if (e.triggered) {
-          return
+          return // skip simulation below if it has already run
         }
 
+        // simulating pressing of down-arrow and enter keys
         console.log('simulating pressing of down-arrow and enter keys')
-
         var ex1 = new Event('keydown')
         ex1.code = 'ArrowDown'
         ex1.key = 'ArrowDown'
         ex1.keyCode = 40
         fullAddress.dispatchEvent(ex1)
-
         var ex2 = new Event('keydown')
         ex2.code = 'Enter'
         ex2.key = 'Enter'
@@ -71,10 +70,9 @@ export default class extends Controller {
 
   placeSelected() {
     console.log('places controller: place selected')
-
     this.showWeatherDataPending()
 
-    if (!this.extractGeoInfo()) {
+    if (!this.extractAddressInfo()) {
       this.showAddressError()
       return
     }
@@ -83,23 +81,24 @@ export default class extends Controller {
     this.weather_formTarget.requestSubmit()
   }
 
-  extractGeoInfo() {
+  extractAddressInfo() {
     this.latitudeTarget.value = ''
     this.longitudeTarget.value = ''
     this.zipcodeTarget.value = ''
     this.countryTarget.value = ''
 
     const place = this.autocomplete.getPlace()
-    if (!place?.geometry?.location || !place.address_components) {
+
+    this.latitudeTarget.value = place?.geometry?.location?.lat()
+    this.longitudeTarget.value = place?.geometry?.location?.lng()
+    if (!this.latitudeTarget.value || !this.longitudeTarget.value) {
       console.log(
-        `missing element 'geometry' or 'address_components' in response from Google Maps for address ${this.full_addressTarget.value}`
+        `warning: could not retrieve latitude/longitude info for address ${this.full_addressTarget.value}`
       )
       return false
     }
 
-    this.latitudeTarget.value = place.geometry.location.lat()
-    this.longitudeTarget.value = place.geometry.location.lng()
-    for (const component of place.address_components) {
+    for (const component of place?.address_components || []) {
       switch (component.types[0]) {
         case 'locality':
           this.cityTarget.value = component.long_name
@@ -115,20 +114,14 @@ export default class extends Controller {
           break
         }
 
-        case 'postal_code': {
-          this.zipcodeTarget.value = component.long_name
-          break
-        }
-
         case 'country':
           this.countryTarget.value = component.short_name
           break
       }
     }
-
-    if (!this.latitudeTarget.value || !this.longitudeTarget.value) {
+    if (!this.zipcodeTarget.value || !this.countryTarget.value) {
       console.log(
-        `warning: could not retrieve location info for address ${this.full_addressTarget.value}`
+        `warning: could not retrieve zip code + country for address ${this.full_addressTarget.value}`
       )
       return false
     }

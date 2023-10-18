@@ -9,10 +9,10 @@ class PlacesTest < ApplicationSystemTestCase
     visit root_url
     assert_selector "h1", text: "Weather Station"
     full_address = find_by_id("full_address", wait: 5)
-    5.times do
+    10.times do
       break if full_address[:placeholder].present?
-      Rails.logger.info "waiting for google maps to initialize address field..."
-      sleep 1
+      Rails.logger.debug "waiting for google maps to initialize address field..."
+      sleep 0.5
     end
     fill_in "full_address", with: entered_address
     els = page.all(:css, ".pac-item", wait: 5)
@@ -22,7 +22,8 @@ class PlacesTest < ApplicationSystemTestCase
     assert has_selector?(".pac-item-selected", wait: 10)
 
     full_address.send_keys :enter
-    return false unless has_selector?("#weather_title", wait: 10)
+
+    return false unless has_selector?("#weather_data_present", wait: 5)
 
     today = page.find(:css, "#today", wait: 5)
     current_temp = today.find(:css, ".today_current_temp", wait: 5)
@@ -44,24 +45,28 @@ class PlacesTest < ApplicationSystemTestCase
 
   test "retrieving weather info (happy path)" do
     # retrieve live/non-cached data for particular address
-    assert retrieve_weather_info("2205 South")
-    el = page.find(:css, "#weather_title", wait: 5)
+    assert retrieve_weather_info("2205 South Melrose Drive, Vista, CA")
+    el = page.find(:css, "#weather_data_present")
     el.assert_no_text("(Cached)")
 
-    # retrieve cached data same address
-    assert retrieve_weather_info("2205 South")
-    el = page.find(:css, "#weather_title", wait: 5)
+    # retrieving same address should retrieve cached data
+    assert retrieve_weather_info("2205 South Melrose Drive, Vista, CA")
+    el = page.find(:css, "#weather_data_present")
+
     el.assert_text("(Cached)")
   end
 
-  test "retrieving weather info (sad path: nonexistent address)" do
+  test "retrieving weather info (sad path: nonexistent address, nothing should be shown on page since user is likely still typing)" do
     refute retrieve_weather_info("123 Nonexistent")
-    assert has_no_selector?("#weather_title")
+    assert has_no_selector?("#address_error")
+    assert has_no_selector?("#weather_data_pending")
+    assert has_no_selector?("#weather_data_error")
   end
 
   test "retrieving weather info (sad path: selected address missing zip code)" do
     refute retrieve_weather_info("Antarctica")
-    assert has_no_selector?("#weather_title")
-    assert has_selector?("#weather_data_error")
+    assert has_selector?("#address_error")
+    assert has_no_selector?("#weather_data_pending")
+    assert has_no_selector?("#weather_data_error")
   end
 end
