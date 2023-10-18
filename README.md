@@ -46,7 +46,7 @@ There following two external data sources are used:
     - does NOT represent a subclass of `ActiveRecord::Base`. Instead, it includes the Rails modules `ActiveModel::Model` and `ActiveModel::Attributes` to do validation.
   - The concern `OpenWeatherDataRetriever` (`app/models/conncerns/open_weather_data_retriever.rb`) does most of the work of this app. The method `retrieve` in the class `OpenWeatherDataRetriever::WeatherData` does the following:
     - receives the geocoded address
-    - retrieves the associated weather data for the current day and a 7-day forecast, returning this data in nested Ruby Hash.
+    - retrieves the associated weather data for the current day and a 7-day forecast.
     - Uses the cached value of data for a particular zipcode if available. This cached data is available for 30 minutes.
 
 ### Scaling
