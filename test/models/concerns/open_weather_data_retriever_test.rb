@@ -60,23 +60,36 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
       assert @model.weather_data.retrieve(@request_opts)
       assert @model.weather_data.valid?
       refute @model.weather_data.retrieved_from_cache?
+      cache_key = @model.weather_data.send(:cache_key, @request_opts)
+      cache_data = Rails.cache.read(cache_key)
+      assert cache_data.present?
 
+      # generate corrupted data
+      hash = JSON.parse(cache_data)
+
+      corrupted_data_last_day_removed = hash.deep_dup
+      corrupted_data_last_day_removed["forecast_days"] = hash["forecast_days"].first(6)
+
+      corrupted_data_last_day_null = hash.deep_dup
+      corrupted_data_last_day_null["forecast_days"] = hash["forecast_days"].first(6) + [nil]
+
+      corrupted_data_missing_date = hash.deep_dup
+      corrupted_data_missing_date["forecast_days"].last.delete("date")
+
+      corrupted_data_invalid_temp = hash.deep_dup
+      corrupted_data_invalid_temp["forecast_days"].last[:high_celsius] = 150
       [
         nil,
-        "",
-        "invalid_data",
+        "}{ invalid json",
+        nil.to_json,
+        "not a hash".to_json,
+        corrupted_data_last_day_removed.to_json,
+        corrupted_data_last_day_null.to_json,
+        corrupted_data_missing_date.to_json,
+        corrupted_data_invalid_temp.to_json
+      ].each do |corrupted_data|
+        Rails.cache.write(cache_key, corrupted_data, expires_in: OpenWeatherDataRetriever::WEATHER_CACHE_EXPIRATION)
 
-        # last day is null
-        "{\"current_temp_celsius\":30.7,\"downloaded_at\":\"2023-09-01T09:00:00.000-07:00\",\"current_day\":{\"date\":\"2023-10-07T19:00:00.000+00:00\",\"low_celsius\":21.5,\"high_celsius\":31.7},\"forecast_days\":[{\"date\":\"2023-10-08T19:00:00.000+00:00\",\"low_celsius\":22.6,\"high_celsius\":31.6},{\"date\":\"2023-10-09T19:00:00.000+00:00\",\"low_celsius\":19.8,\"high_celsius\":27.4},{\"date\":\"2023-10-10T19:00:00.000+00:00\",\"low_celsius\":17.8,\"high_celsius\":23.2},{\"date\":\"2023-10-11T19:00:00.000+00:00\",\"low_celsius\":18.3,\"high_celsius\":22.4},{\"date\":\"2023-10-12T19:00:00.000+00:00\",\"low_celsius\":17.5,\"high_celsius\":23.1},{\"date\":\"2023-10-13T19:00:00.000+00:00\",\"low_celsius\":17.9,\"high_celsius\":23.3},null]}",
-
-        # missing date on last day
-        "{\"current_temp_celsius\":30.7,\"downloaded_at\":\"2023-09-01T09:00:00.000-07:00\",\"current_day\":{\"date\":\"2023-10-07T19:00:00.000+00:00\",\"low_celsius\":21.5,\"high_celsius\":31.7},\"forecast_days\":[{\"date\":\"2023-10-08T19:00:00.000+00:00\",\"low_celsius\":22.6,\"high_celsius\":31.6},{\"date\":\"2023-10-09T19:00:00.000+00:00\",\"low_celsius\":19.8,\"high_celsius\":27.4},{\"date\":\"2023-10-10T19:00:00.000+00:00\",\"low_celsius\":17.8,\"high_celsius\":23.2},{\"date\":\"2023-10-11T19:00:00.000+00:00\",\"low_celsius\":18.3,\"high_celsius\":22.4},{\"date\":\"2023-10-12T19:00:00.000+00:00\",\"low_celsius\":17.5,\"high_celsius\":23.1},{\"date\":\"2023-10-13T19:00:00.000+00:00\",\"low_celsius\":17.9,\"high_celsius\":23.3},{\"low_celsius\":17.6,\"high_celsius\":23.6}]}",
-
-        # invalid temp on last day
-        "{\"current_temp_celsius\":30.7,\"downloaded_at\":\"2023-09-01T09:00:00.000-07:00\",\"current_day\":{\"date\":\"2023-10-07T19:00:00.000+00:00\",\"low_celsius\":21.5,\"high_celsius\":31.7},\"forecast_days\":[{\"date\":\"2023-10-08T19:00:00.000+00:00\",\"low_celsius\":22.6,\"high_celsius\":31.6},{\"date\":\"2023-10-09T19:00:00.000+00:00\",\"low_celsius\":19.8,\"high_celsius\":27.4},{\"date\":\"2023-10-10T19:00:00.000+00:00\",\"low_celsius\":17.8,\"high_celsius\":23.2},{\"date\":\"2023-10-11T19:00:00.000+00:00\",\"low_celsius\":18.3,\"high_celsius\":22.4},{\"date\":\"2023-10-12T19:00:00.000+00:00\",\"low_celsius\":17.5,\"high_celsius\":23.1},{\"date\":\"2023-10-13T19:00:00.000+00:00\",\"low_celsius\":17.9,\"high_celsius\":23.3},{\"date\":\"2023-10-14T19:00:00.000+00:00\",\"low_celsius\":17.6,\"high_celsius\":123.6}]}"
-      ].each do |bad_data|
-        key = @model.weather_data.send(:cache_key, @request_opts)
-        Rails.cache.write(key, bad_data, expires_in: OpenWeatherDataRetriever::WEATHER_CACHE_EXPIRATION)
         assert @model.weather_data.retrieve(@request_opts)
         assert @model.weather_data.valid?
         refute @model.weather_data.retrieved_from_cache?
@@ -116,7 +129,7 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
       refute @model.weather_data.valid?
     end
 
-    test "after success, current_temp returns the correct value" do
+    test "current_temp returns the correct value" do
       assert_nil @model.weather_data.current_temp("fahrenheit")
       assert @model.weather_data.retrieve(@request_opts)
       assert_equal 87, @model.weather_data.current_temp
@@ -124,7 +137,7 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
       assert_equal 31, @model.weather_data.current_temp("celsius")
     end
 
-    test "after success, downloaded_at_as_time_of_day returns the correct value in the specified time zone" do
+    test "success, downloaded_at_as_time_of_day returns the correct value in the specified time zone" do
       assert_nil @model.weather_data.downloaded_at_as_time_of_day
       assert @model.weather_data.retrieve(@request_opts)
       assert_equal "9:00am PDT", @model.weather_data.downloaded_at_as_time_of_day("Pacific Time (US & Canada)")

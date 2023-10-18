@@ -141,7 +141,7 @@ module OpenWeatherDataRetriever
     end
 
     def valid_cache_data_hash?(hash)
-      valid = hash["current_temp_celsius"].present? &&
+      valid = hash.is_a?(Hash) && hash["current_temp_celsius"].present? &&
         OpenWeatherDataRetriever.valid_time_string?(hash["downloaded_at"]) &&
         valid_cached_day_hash?(hash["current_day"]) &&
         hash["forecast_days"].is_a?(Array) && hash["forecast_days"].length == 7 &&
