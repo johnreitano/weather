@@ -104,6 +104,7 @@ GEM
     debug (1.8.0)
       irb (>= 1.5.0)
       reline (>= 0.3.1)
+    docile (1.4.0)
     drb (2.1.1)
       ruby2_keywords
     erubi (1.12.0)
@@ -263,6 +264,12 @@ GEM
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
     sexp_processor (4.17.0)
+    simplecov (0.22.0)
+      docile (~> 1.1)
+      simplecov-html (~> 0.11)
+      simplecov_json_formatter (~> 0.1)
+    simplecov-html (0.12.3)
+    simplecov_json_formatter (0.1.4)
     sprockets (4.2.1)
       concurrent-ruby (~> 1.0)
       rack (>= 2.2.4, < 4)
@@ -339,6 +346,7 @@ DEPENDENCIES
   rails_best_practices
   reek
   selenium-webdriver
+  simplecov
   sprockets-rails
   sqlite3 (~> 1.4)
   standard
@@ -346,7 +354,6 @@ DEPENDENCIES
   tailwindcss-rails
   timecop
   turbo-rails
-  tzinfo-data
   validates_zipcode (~> 0.5.2)
   web-console
 

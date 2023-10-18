@@ -11,8 +11,10 @@ class PlacesTest < ApplicationSystemTestCase
     full_address = find_by_id("full_address", wait: 5)
     10.times do
       break if full_address[:placeholder].present?
+      # :nocov:
       Rails.logger.debug "waiting for google maps to initialize address field..."
       sleep 0.5
+      # :nocov:
     end
     fill_in "full_address", with: entered_address
     els = page.all(:css, ".pac-item", wait: 5)

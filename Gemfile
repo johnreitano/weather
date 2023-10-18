@@ -77,4 +77,5 @@ group :test do
   gem "selenium-webdriver"
   gem "timecop"
   gem "minitest-stub_any_instance"
+  gem "simplecov", require: false
 end
