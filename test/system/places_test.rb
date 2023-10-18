@@ -35,8 +35,8 @@ class PlacesTest < ApplicationSystemTestCase
 
     forecast = page.find(:css, "#forecast", wait: 5)
 
-    (1..7).each do |i|
-      day = forecast.find(:css, "#day-#{i}", wait: 5)
+    (1..7).each do |day_index|
+      day = forecast.find(:css, "#day-#{day_index}", wait: 5)
       day_label = day.find(:css, ".day_label", wait: 5)
       day_label.assert_text(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun) +\d{1,2}/)
       day_high_low = day.find(:css, ".day_high_low", wait: 5)
