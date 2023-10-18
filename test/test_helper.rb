@@ -1,7 +1,6 @@
 ENV["RAILS_ENV"] ||= "test"
 require "simplecov"
 SimpleCov.start
-puts "required simplecov"
 require_relative "../config/environment"
 require "rails/test_help"
 require "minitest/autorun"

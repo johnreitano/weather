@@ -132,12 +132,12 @@ module OpenWeatherDataRetriever
     end
 
     def valid_cached_day_hash?(day_hash)
-      unless day_hash.is_a?(Hash)
-        Rails.logger.warn("day does not contain a hash")
-        return false
-      end
-
-      OpenWeatherDataRetriever.valid_time_string?(day_hash["date"]) && OpenWeatherDataRetriever.valid_celsius_temp?(day_hash["low_celsius"]) && OpenWeatherDataRetriever.valid_celsius_temp?(day_hash["high_celsius"])
+      valid = day_hash.is_a?(Hash) &&
+        OpenWeatherDataRetriever.valid_time_string?(day_hash["date"]) &&
+        OpenWeatherDataRetriever.valid_celsius_temp?(day_hash["low_celsius"]) &&
+        OpenWeatherDataRetriever.valid_celsius_temp?(day_hash["high_celsius"])
+      Rails.logger.warn("invalid cached day hash: #{day_hash}") unless valid
+      valid
     end
 
     def valid_cache_data_hash?(hash)
@@ -146,27 +146,27 @@ module OpenWeatherDataRetriever
         valid_cached_day_hash?(hash["current_day"]) &&
         hash["forecast_days"].is_a?(Array) && hash["forecast_days"].length == 7 &&
         hash["forecast_days"].all? { |day_hash| valid_cached_day_hash?(day_hash) }
-      Rails.logger.warn("invalid cache data: #{hash}") unless valid
+      Rails.logger.warn("invalid cache data hash: #{hash}") unless valid
       valid
     end
 
-    def open_weather_data_valid?(open_weather_data)
-      days = open_weather_data["daily"]
-      unless valid_kelvin_temp?(open_weather_data.dig("current", "temp")) &&
-          days.is_a?(Array) &&
-          days.length >= 8 &&
-          days.all? { |day_hash| valid_open_weather_day_hash?(day_hash) }
-        Rails.logger.warn("invalid open weather data: #{open_weather_data}")
-        return false
-      end
-      true
-    end
-
     def valid_open_weather_day_hash?(day_hash)
-      day_hash.is_a?(Hash) &&
+      valid = day_hash.is_a?(Hash) &&
         day_hash["dt"].is_a?(Time) &&
         valid_kelvin_temp?(day_hash.dig("temp", "min")) &&
         valid_kelvin_temp?(day_hash.dig("temp", "max"))
+      Rails.logger.warn("invalid open weather day hash: #{day_hash}") unless valid
+      valid
+    end
+
+    def valid_open_weather_data?(open_weather_data)
+      valid = open_weather_data.is_a?(Hash) &&
+        valid_kelvin_temp?(open_weather_data.dig("current", "temp")) &&
+        open_weather_data["daily"].is_a?(Array) &&
+        open_weather_data["daily"].length >= 8 &&
+        open_weather_data["daily"].all? { |day_hash| valid_open_weather_day_hash?(day_hash) }
+      Rails.logger.warn("invalid open weather data: #{open_weather_data}") unless valid
+      valid
     end
 
     def valid_kelvin_temp?(temp)
@@ -241,7 +241,7 @@ module OpenWeatherDataRetriever
     end
 
     def parse_open_weather_data(open_weather_data)
-      return false unless open_weather_data_valid?(open_weather_data)
+      return false unless valid_open_weather_data?(open_weather_data)
 
       @current_temp_celsius = kelvin_to_celsius(open_weather_data.dig("current", "temp"))
       @downloaded_at = Time.now
