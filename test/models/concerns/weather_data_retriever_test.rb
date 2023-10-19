@@ -2,19 +2,19 @@
 
 require "test_helper"
 
-class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
+class WeatherDataRetrieverTest < ActiveSupport::TestCase
   class TestModel
-    include OpenWeatherDataRetriever
-    open_weather_data :weather_data
+    include WeatherDataRetriever
+    weather_data_attribute :weather_data, "dummy-api-key"
   end
 
   class ModuleTest < ActiveSupport::TestCase
     test "valid_time_string? returns true if time string is valid, false otherwise" do
-      assert OpenWeatherDataRetriever.valid_time_string?("2023-10-07 19:00:00 UTC")
-      refute OpenWeatherDataRetriever.valid_time_string?(nil)
-      refute OpenWeatherDataRetriever.valid_time_string?("")
-      refute OpenWeatherDataRetriever.valid_time_string?("foo")
-      refute OpenWeatherDataRetriever.valid_time_string?("2023")
+      assert WeatherDataRetriever.valid_time_string?("2023-10-07 19:00:00 UTC")
+      refute WeatherDataRetriever.valid_time_string?(nil)
+      refute WeatherDataRetriever.valid_time_string?("")
+      refute WeatherDataRetriever.valid_time_string?("foo")
+      refute WeatherDataRetriever.valid_time_string?("2023")
     end
   end
 
@@ -27,20 +27,26 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
 
       @model = TestModel.new
 
-      # stub for returning data in successful scenarios
-      open_weather_client = ::OpenWeather::Client
-      def open_weather_client.new(_)
-        mock_client = Object.new
-        def mock_client.one_call(_opts)
-          {"current" => {"temp" => 303.82},
-           "daily" => [{"dt" => "2023-10-07 19:00:00 UTC".to_time, "temp" => {"min" => 294.61, "max" => 304.82}},
-             {"dt" => "2023-10-08 19:00:00 UTC".to_time, "temp" => {"min" => 295.77, "max" => 304.76}}, {"dt" => "2023-10-09 19:00:00 UTC".to_time, "temp" => {"min" => 292.9, "max" => 300.5}}, {"dt" => "2023-10-10 19:00:00 UTC".to_time, "temp" => {"min" => 290.95, "max" => 296.3}}, {"dt" => "2023-10-11 19:00:00 UTC".to_time, "temp" => {"min" => 291.47, "max" => 295.51}}, {"dt" => "2023-10-12 19:00:00 UTC".to_time, "temp" => {"min" => 290.68, "max" => 296.23}}, {"dt" => "2023-10-13 19:00:00 UTC".to_time, "temp" => {"min" => 291.02, "max" => 296.48}}, {"dt" => "2023-10-14 19:00:00 UTC".to_time, "temp" => {"min" => 290.71, "max" => 296.79}}]}
-        end
-        mock_client
+      # simulate OpenWeather api returning data successfully
+      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
+      def open_weather_client.one_call(_opts)
+        {
+          "current" => {"temp" => 303.82},
+          "daily" => [
+            {"dt" => "2023-10-07 19:00:00 UTC".to_time, "temp" => {"min" => 294.61, "max" => 304.82}},
+            {"dt" => "2023-10-08 19:00:00 UTC".to_time, "temp" => {"min" => 295.77, "max" => 304.76}},
+            {"dt" => "2023-10-09 19:00:00 UTC".to_time, "temp" => {"min" => 292.9, "max" => 300.5}},
+            {"dt" => "2023-10-10 19:00:00 UTC".to_time, "temp" => {"min" => 290.95, "max" => 296.3}},
+            {"dt" => "2023-10-11 19:00:00 UTC".to_time, "temp" => {"min" => 291.47, "max" => 295.51}},
+            {"dt" => "2023-10-12 19:00:00 UTC".to_time, "temp" => {"min" => 290.68, "max" => 296.23}},
+            {"dt" => "2023-10-13 19:00:00 UTC".to_time, "temp" => {"min" => 291.02, "max" => 296.48}},
+            {"dt" => "2023-10-14 19:00:00 UTC".to_time, "temp" => {"min" => 290.71, "max" => 296.79}}
+          ]
+        }
       end
 
       @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA",
-                       zipcode: "91913", country: "US", temp_unit: "fahrenheit", open_weather_api_key: "123"}
+                       zipcode: "91913", country: "US", temp_unit: "fahrenheit"}
     end
 
     teardown do
@@ -93,7 +99,7 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
         corrupted_data_missing_date.to_json,
         corrupted_data_invalid_temp.to_json
       ].each do |corrupted_data|
-        Rails.cache.write(cache_key, corrupted_data, expires_in: OpenWeatherDataRetriever::WEATHER_CACHE_EXPIRATION)
+        Rails.cache.write(cache_key, corrupted_data, expires_in: WeatherDataRetriever::WEATHER_CACHE_EXPIRATION)
 
         assert @model.weather_data.retrieve(@request_opts)
         assert @model.weather_data.valid?
@@ -108,28 +114,22 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
 
     test "fails gracefully when OpenWeather returns exception" do
       # simulate OpenWeather api raising an OpenWeather::Errors::Fault exception
-      weather_data = @model.weather_data
-      def weather_data.open_weather_client(_api_key)
-        mock_client = Object.new
-        def mock_client.one_call(_opts)
-          raise OpenWeather::Errors::Fault, "dummy exception"
-        end
-        mock_client
+      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
+      def open_weather_client.one_call(_opts)
+        raise OpenWeather::Errors::Fault, "dummy exception"
       end
+
       refute @model.weather_data.retrieve(@request_opts)
       refute @model.weather_data.valid?
     end
 
     test "fails gracefully when network connection fails" do
       # simulate network exception
-      weather_data = @model.weather_data
-      def weather_data.open_weather_client(_api_key)
-        mock_client = Object.new
-        def mock_client.one_call(_opts)
-          raise Faraday::ConnectionFailed, "dummy exception"
-        end
-        mock_client
+      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
+      def open_weather_client.one_call(_opts)
+        raise Faraday::ConnectionFailed, "dummy exception"
       end
+
       refute @model.weather_data.retrieve(@request_opts)
       refute @model.weather_data.valid?
     end

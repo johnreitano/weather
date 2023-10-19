@@ -37,7 +37,7 @@ class PlaceTest < ActiveSupport::TestCase
     refute place.retrieve_weather_data
   end
 
-  test "retrieve_weather_data - calls method WeatherData#retrieve (from concern OpenWeatherDataRetriever)" do
+  test "retrieve_weather_data - calls method WeatherData#retrieve (from concern WeatherDataRetriever)" do
     place = Place.new(@all_attributes)
     weather_data = place.weather_data
     def weather_data.retrieve(_)

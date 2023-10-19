@@ -22,7 +22,7 @@ See https://weather-ex6k.onrender.com
 There following two external data sources are used:
 
 - The "Place Autocomplete" feature of the Google Maps API provides autocompletion and geocoding of addresses (See https://developers.google.com/maps/documentation/javascript/place-autocomplete).
-- The one_call method Open Call API from OpenWeather provides the core weather data (see https://openweathermap.org/api/one-call-3). This API is accessed via the gem "open-weather-ruby-client" (see https://github.com/dblock/open-weather-ruby-client).
+- The one_call method in OpenWeather's "One Call API" provides this app's core weather data (see https://openweathermap.org/api/one-call-3). This API is accessed via the gem "open-weather-ruby-client" (see https://github.com/dblock/open-weather-ruby-client).
 
 ### Internal Design
 
@@ -41,10 +41,10 @@ There following two external data sources are used:
   - The model `Place` (`app/models/place.rb`) does the following:
     - receives address data originating the home page.
     - validates the address
-    - passes the adddress to the `retrieve` method of the classs `OpenWeatherDataRetriever::WeatherData` (see below)
+    - passes the adddress to the `retrieve` method of the class `WeatherDataRetriever::WeatherData` (see below)
     - returns the boolean indicating success or failure of the `retrieve` method
     - does NOT represent a subclass of `ActiveRecord::Base`. Instead, it includes the Rails modules `ActiveModel::Model` and `ActiveModel::Attributes` to do validation.
-  - The concern `OpenWeatherDataRetriever` (`app/models/conncerns/open_weather_data_retriever.rb`) does most of the work of this app. The method `retrieve` in the class `OpenWeatherDataRetriever::WeatherData` does the following:
+  - The concern `WeatherDataRetriever` (`app/models/conncerns/weather_data_retriever.rb`) does most of the work of this app. The method `retrieve` in the class `WeatherDataRetriever::WeatherData` does the following:
     - receives the geocoded address
     - retrieves the associated weather data for the current day and a 7-day forecast.
     - Uses the cached value of data for a particular zipcode if available. This cached data is available for 30 minutes.
