@@ -14,7 +14,7 @@ class PlacesController < ApplicationController
     @place = Place.new(place_params)
     @temp_unit = "fahrenheight"
     @time_zone = "Pacific Time (US & Canada)"
-    success = @place.validate_request_and_retrieve_weather_data
+    success = @place.retrieve_weather_data
     @weather_data = @place.weather_data
     render :index, status: success ? :created : :unprocessable_entity
   end

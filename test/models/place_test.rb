@@ -31,13 +31,13 @@ class PlaceTest < ActiveSupport::TestCase
     end
   end
 
-  test "validate_request_and_retrieve_weather_data returns false if place is invalid" do
+  test "retrieve_weather_data returns false if place is invalid" do
     place = Place.new(@all_attributes.except(:latitude))
     refute place.valid?
-    refute place.validate_request_and_retrieve_weather_data
+    refute place.retrieve_weather_data
   end
 
-  test "validate_request_and_retrieve_weather_data - calls method WeatherData#retrieve (from concern OpenWeatherDataRetriever)" do
+  test "retrieve_weather_data - calls method WeatherData#retrieve (from concern OpenWeatherDataRetriever)" do
     place = Place.new(@all_attributes)
     weather_data = place.weather_data
     def weather_data.retrieve(_)
@@ -46,7 +46,7 @@ class PlaceTest < ActiveSupport::TestCase
     end
     assert place.valid?
     refute place.weather_data.instance_variable_get(:@retrieve_weather_data_called)
-    place.validate_request_and_retrieve_weather_data
+    place.retrieve_weather_data
     assert place.weather_data.instance_variable_get(:@retrieve_weather_data_called)
   end
 end

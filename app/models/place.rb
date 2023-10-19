@@ -29,7 +29,7 @@ class Place
   validates :temp_unit,
     inclusion: {in: %w[fahrenheit celsius], allow_blank: true, message: "must be 'fahrenheit' or 'celsius'"}
 
-  def validate_request_and_retrieve_weather_data
+  def retrieve_weather_data
     return false unless valid?
 
     opts = attributes.slice("latitude", "longitude", "city", "state", "zipcode", "country", "temp_unit").symbolize_keys
