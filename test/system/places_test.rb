@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "application_system_test_case"
 
 class PlacesTest < ApplicationSystemTestCase
@@ -12,6 +14,7 @@ class PlacesTest < ApplicationSystemTestCase
     10.times do
       break if full_address[:placeholder].present?
       # :nocov:
+
       Rails.logger.debug "waiting for google maps to initialize address field..."
       sleep 0.5
       # :nocov:
@@ -31,7 +34,7 @@ class PlacesTest < ApplicationSystemTestCase
     current_temp = today.find(:css, ".today_current_temp", wait: 5)
     current_temp.assert_text(/Current Temp +\d+/)
     today_high_low = today.find(:css, ".today_high_low", wait: 5)
-    today_high_low.assert_text(/Today's High\/Low +\d+/)
+    today_high_low.assert_text(%r{Today's High/Low +\d+})
 
     forecast = page.find(:css, "#forecast", wait: 5)
 
@@ -58,7 +61,7 @@ class PlacesTest < ApplicationSystemTestCase
     el.assert_text("(Cached)")
   end
 
-  test "retrieving weather info (sad path: nonexistent address, nothing should be shown on page since user is likely still typing)" do
+  test "retrieving weather info (sad path: nonexistent address, user likely still typing)" do
     refute retrieve_weather_info("123 Nonexistent")
     assert has_no_selector?("#address_error")
     assert has_no_selector?("#weather_data_pending")

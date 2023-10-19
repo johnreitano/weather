@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source "https://rubygems.org"
 
 ruby "3.2.2"
@@ -44,8 +46,8 @@ gem "bootsnap", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
-gem "open-weather-ruby-client"
 gem "countries", "~> 5.7"
+gem "open-weather-ruby-client"
 gem "validates_zipcode", "~> 0.5.2"
 
 group :development, :test do
@@ -66,16 +68,16 @@ group :development do
 
   # gem "htmlbeautifier"
   gem "brakeman"
+  gem "foreman"
   gem "rails_best_practices"
   gem "reek"
-  gem "foreman"
 end
 
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  gem "selenium-webdriver"
-  gem "timecop"
   gem "minitest-stub_any_instance"
+  gem "selenium-webdriver"
   gem "simplecov", require: false
+  gem "timecop"
 end

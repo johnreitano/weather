@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class PlacesController < ApplicationController
   # GET /places or /places.json
   def index

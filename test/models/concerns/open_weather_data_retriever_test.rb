@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
@@ -29,13 +31,16 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
       open_weather_client = ::OpenWeather::Client
       def open_weather_client.new(_)
         mock_client = Object.new
-        def mock_client.one_call(opts)
-          {"current" => {"temp" => 303.82}, "daily" => [{"dt" => "2023-10-07 19:00:00 UTC".to_time, "temp" => {"min" => 294.61, "max" => 304.82}}, {"dt" => "2023-10-08 19:00:00 UTC".to_time, "temp" => {"min" => 295.77, "max" => 304.76}}, {"dt" => "2023-10-09 19:00:00 UTC".to_time, "temp" => {"min" => 292.9, "max" => 300.5}}, {"dt" => "2023-10-10 19:00:00 UTC".to_time, "temp" => {"min" => 290.95, "max" => 296.3}}, {"dt" => "2023-10-11 19:00:00 UTC".to_time, "temp" => {"min" => 291.47, "max" => 295.51}}, {"dt" => "2023-10-12 19:00:00 UTC".to_time, "temp" => {"min" => 290.68, "max" => 296.23}}, {"dt" => "2023-10-13 19:00:00 UTC".to_time, "temp" => {"min" => 291.02, "max" => 296.48}}, {"dt" => "2023-10-14 19:00:00 UTC".to_time, "temp" => {"min" => 290.71, "max" => 296.79}}]}
+        def mock_client.one_call(_opts)
+          {"current" => {"temp" => 303.82},
+           "daily" => [{"dt" => "2023-10-07 19:00:00 UTC".to_time, "temp" => {"min" => 294.61, "max" => 304.82}},
+             {"dt" => "2023-10-08 19:00:00 UTC".to_time, "temp" => {"min" => 295.77, "max" => 304.76}}, {"dt" => "2023-10-09 19:00:00 UTC".to_time, "temp" => {"min" => 292.9, "max" => 300.5}}, {"dt" => "2023-10-10 19:00:00 UTC".to_time, "temp" => {"min" => 290.95, "max" => 296.3}}, {"dt" => "2023-10-11 19:00:00 UTC".to_time, "temp" => {"min" => 291.47, "max" => 295.51}}, {"dt" => "2023-10-12 19:00:00 UTC".to_time, "temp" => {"min" => 290.68, "max" => 296.23}}, {"dt" => "2023-10-13 19:00:00 UTC".to_time, "temp" => {"min" => 291.02, "max" => 296.48}}, {"dt" => "2023-10-14 19:00:00 UTC".to_time, "temp" => {"min" => 290.71, "max" => 296.79}}]}
         end
         mock_client
       end
 
-      @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA", zipcode: "91913", country: "US", temp_unit: "fahrenheit", open_weather_api_key: "123"}
+      @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA",
+                       zipcode: "91913", country: "US", temp_unit: "fahrenheit", open_weather_api_key: "123"}
     end
 
     teardown do
@@ -104,10 +109,10 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
     test "fails gracefully when OpenWeather returns exception" do
       # simulate OpenWeather api raising an OpenWeather::Errors::Fault exception
       weather_data = @model.weather_data
-      def weather_data.open_weather_client(api_key)
+      def weather_data.open_weather_client(_api_key)
         mock_client = Object.new
-        def mock_client.one_call(opts)
-          raise OpenWeather::Errors::Fault.new "dummy exception"
+        def mock_client.one_call(_opts)
+          raise OpenWeather::Errors::Fault, "dummy exception"
         end
         mock_client
       end
@@ -118,10 +123,10 @@ class OpenWeatherDataRetrieverTest < ActiveSupport::TestCase
     test "fails gracefully when network connection fails" do
       # simulate network exception
       weather_data = @model.weather_data
-      def weather_data.open_weather_client(api_key)
+      def weather_data.open_weather_client(_api_key)
         mock_client = Object.new
-        def mock_client.one_call(opts)
-          raise Faraday::ConnectionFailed.new "dummy exception"
+        def mock_client.one_call(_opts)
+          raise Faraday::ConnectionFailed, "dummy exception"
         end
         mock_client
       end

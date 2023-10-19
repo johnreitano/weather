@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class PlaceTest < ActiveSupport::TestCase
   setup do
-    @all_attributes = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA", zipcode: "91913", country: "US", temp_unit: "fahrenheit"}
-    @required_fields = [:latitude, :longitude, :zipcode, :country]
-    @optional_fields = [:city, :state, :temp_unit]
+    @all_attributes = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA",
+                       zipcode: "91913", country: "US", temp_unit: "fahrenheit"}
+    @required_fields = %i[latitude longitude zipcode country]
+    @optional_fields = %i[city state temp_unit]
   end
 
   test "passes validation if all required fields are present" do
@@ -35,15 +38,15 @@ class PlaceTest < ActiveSupport::TestCase
   end
 
   test "validate_request_and_retrieve_weather_data - calls method WeatherData#retrieve (from concern OpenWeatherDataRetriever)" do
-    @@retrieve_weather_data_called = false
     place = Place.new(@all_attributes)
     weather_data = place.weather_data
-    def weather_data.retrieve(opts)
-      @@retrieve_weather_data_called = true
+    def weather_data.retrieve(_)
+      @retrieve_weather_data_called = true
       [{}, true]
     end
     assert place.valid?
+    refute place.weather_data.instance_variable_get(:@retrieve_weather_data_called)
     place.validate_request_and_retrieve_weather_data
-    assert @@retrieve_weather_data_called
+    assert place.weather_data.instance_variable_get(:@retrieve_weather_data_called)
   end
 end

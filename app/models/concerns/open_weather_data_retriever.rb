@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # OpenWeatherDataRetriever can be included in any ruby model to add the ability to retrieve
 # data from the Open Weather API. See https://openweathermap.org/api for details on the source data.
 # To use this module, add the following two lines to your model class:
@@ -29,6 +31,7 @@ module OpenWeatherDataRetriever
 
   def self.to_fahrenheit_or_celsius(temp_celsius, temp_unit)
     return nil if temp_celsius.nil?
+
     temp = if temp_unit&.to_s&.downcase == "celsius"
       temp_celsius
     else
@@ -38,17 +41,11 @@ module OpenWeatherDataRetriever
   end
 
   def self.valid_time_string?(str)
-    unless str.is_a?(String) && str.present?
-      Rails.logger.warn("time not a string: #{str}")
-      return false
-    end
-    begin
-      Time.parse(str)
-    rescue ArgumentError
-      Rails.logger.warn("time string not a valid time: #{str}")
-      return false
-    end
+    Time.parse(str.to_s)
     true
+  rescue ArgumentError
+    Rails.logger.warn("time string not a valid time: #{str}")
+    false
   end
 
   class WeatherDay
@@ -64,8 +61,8 @@ module OpenWeatherDataRetriever
       @high_celsius = high_celsius
     end
 
-    def as_json(options = {})
-      {date: date, low_celsius: low_celsius, high_celsius: high_celsius}
+    def as_json(_options = {})
+      {date:, low_celsius:, high_celsius:}
     end
 
     def day_label
@@ -95,11 +92,14 @@ module OpenWeatherDataRetriever
     def retrieve(opts)
       reinitialize
       return false unless all_required_opts_present?(opts)
+
       retrieve_data_from_cache_or_open_weather(opts)
     end
 
     def valid?
-      OpenWeatherDataRetriever.valid_celsius_temp?(@current_temp_celsius) && downloaded_at.is_a?(Time) && current_day.is_a?(OpenWeatherDataRetriever::WeatherDay) && forecast_days.is_a?(Array) && forecast_days.length == 7 && forecast_days.all? { |day| day.is_a?(OpenWeatherDataRetriever::WeatherDay) && day.valid? } && retrieved_from_cache.in?([true, false])
+      OpenWeatherDataRetriever.valid_celsius_temp?(@current_temp_celsius) && downloaded_at.is_a?(Time) && current_day.is_a?(OpenWeatherDataRetriever::WeatherDay) && forecast_days.is_a?(Array) && forecast_days.length == 7 && forecast_days.all? do |day|
+        day.is_a?(OpenWeatherDataRetriever::WeatherDay) && day.valid?
+      end && retrieved_from_cache.in?([true, false])
     end
 
     def retrieved_from_cache?
@@ -114,10 +114,10 @@ module OpenWeatherDataRetriever
       downloaded_at&.in_time_zone(time_zone)&.strftime("%l:%M%P %Z")&.strip
     end
 
-    def as_json(options = {})
+    def as_json(_options = {})
       {
         current_temp_celsius: @current_temp_celsius,
-        downloaded_at: downloaded_at,
+        downloaded_at:,
         current_day: current_day.as_json,
         forecast_days: forecast_days.as_json
       }
@@ -221,7 +221,7 @@ module OpenWeatherDataRetriever
     end
 
     def open_weather_client(api_key)
-      @open_weather_client ||= OpenWeather::Client.new(api_key: api_key)
+      @open_weather_client ||= OpenWeather::Client.new(api_key:)
     end
 
     def retrieve_data_from_open_weather(opts)
@@ -260,6 +260,7 @@ module OpenWeatherDataRetriever
     def retrieve_data_from_cache(opts)
       cache_data = Rails.cache.read(cache_key(opts))
       return false unless cache_data
+
       parse_cache_data(cache_data)
     end
 
@@ -270,6 +271,7 @@ module OpenWeatherDataRetriever
       end
 
       return false unless retrieve_data_from_open_weather(opts)
+
       Rails.cache.write(cache_key(opts), to_json, expires_in: WEATHER_CACHE_EXPIRATION)
       @retrieved_from_cache = false
       true
@@ -277,6 +279,7 @@ module OpenWeatherDataRetriever
 
     def kelvin_to_celsius(temp_k)
       return nil if temp_k.nil?
+
       (temp_k.to_f - ZERO_CELSIUS_IN_KELVIN).round(1)
     end
   end
