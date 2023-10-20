@@ -66,7 +66,6 @@ group :development do
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
 
-  # gem "htmlbeautifier"
   gem "brakeman"
   gem "foreman"
   gem "rails_best_practices"
@@ -74,9 +73,7 @@ group :development do
 end
 
 group :test do
-  # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  gem "minitest-stub_any_instance"
   gem "selenium-webdriver"
   gem "simplecov", require: false
   gem "timecop"

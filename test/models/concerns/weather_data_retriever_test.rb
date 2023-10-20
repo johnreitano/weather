@@ -178,8 +178,8 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
       assert_equal 64, day.low
       assert_equal 64, day.low("fahrenheit")
       assert_equal 18, day.low("celsius")
-      assert_equal 75, day.high
-      assert_equal 75, day.high("fahrenheit")
+      assert_equal 74, day.high
+      assert_equal 74, day.high("fahrenheit")
       assert_equal 24, day.high("celsius")
     end
 

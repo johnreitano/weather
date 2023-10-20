@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class PlacesController < ApplicationController
-  # GET /places or /places.json
   def index
     @place = Place.new
     @temp_unit = "fahrenheight"
@@ -9,7 +8,6 @@ class PlacesController < ApplicationController
     @weather_data = @place.weather_data
   end
 
-  # POST /places or /places.json
   def create
     @place = Place.new(place_params)
     @temp_unit = "fahrenheight"

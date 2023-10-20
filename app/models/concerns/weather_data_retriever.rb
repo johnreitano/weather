@@ -20,7 +20,7 @@ module WeatherDataRetriever
     end
   end
 
-  def initialize(*args)
+  def initialize(*)
     super
     attribute_name = self.class.instance_variable_get(:@weather_data_attribute_name)
     api_key = self.class.instance_variable_get(:@api_key)
@@ -34,27 +34,34 @@ module WeatherDataRetriever
   def self.to_fahrenheit_or_celsius(temp_celsius, temp_unit)
     return nil if temp_celsius.nil?
 
-    temp = if temp_unit&.to_s&.downcase == "celsius"
-      temp_celsius
-    else
-      (temp_celsius.to_f * 9.0 / 5.0 + 32.0).round(1)
-    end
+    temp = celsius?(temp_unit) ? temp_celsius : celsius_to_fahrenheit(temp_celsius)
     temp.round
   end
 
+  def self.celsius?(temp_unit)
+    temp_unit.to_s.downcase == "celsius"
+  end
+
+  def self.celsius_to_fahrenheit(temp_celsius)
+    temp_celsius.to_f * 9.0 / 5.0 + 32.0
+  end
+
   def self.valid_time_string?(str)
-    Time.parse(str.to_s)
-    true
-  rescue ArgumentError
-    Rails.logger.warn("time string not a valid time: #{str}")
-    false
+    return false unless str.is_a?(String)
+    begin
+      Time.parse(str.to_s)
+      true
+    rescue ArgumentError
+      Rails.logger.warn("time string not a valid time: #{str}")
+      false
+    end
   end
 
   class WeatherDay
     attr_reader :date, :low_celsius, :high_celsius
 
     def initialize(date:, low_celsius:, high_celsius:)
-      @date = if date.is_a?(String) && WeatherDataRetriever.valid_time_string?(date)
+      @date = if WeatherDataRetriever.valid_time_string?(date)
         Time.parse(date)
       else
         date
