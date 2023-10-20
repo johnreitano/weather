@@ -95,7 +95,7 @@ module WeatherDataRetriever
     attr_reader :downloaded_at, :current_day, :forecast_days, :retrieved_from_cache
 
     def initialize(api_key)
-      @open_weather_client = OpenWeather::Client.new(api_key:)
+      @api_key = api_key
       reinitialize
     end
 
@@ -151,7 +151,7 @@ module WeatherDataRetriever
     end
 
     def valid_cache_data_hash?(hash)
-      valid = hash.is_a?(Hash) && hash["current_temp_celsius"].present? &&
+      valid = hash["current_temp_celsius"].present? &&
         WeatherDataRetriever.valid_time_string?(hash["downloaded_at"]) &&
         valid_cached_day_hash?(hash["current_day"]) &&
         hash["forecast_days"].is_a?(Array) && hash["forecast_days"].length == 7 &&
@@ -161,8 +161,10 @@ module WeatherDataRetriever
     end
 
     def valid_open_weather_day_hash?(day_hash)
+      max_time = Time.now.to_i + 9.day.in_seconds
       valid = day_hash.is_a?(Hash) &&
-        day_hash["dt"].is_a?(Time) &&
+        day_hash["dt"].is_a?(Integer) &&
+        day_hash["dt"].in?(0..max_time) &&
         valid_kelvin_temp?(day_hash.dig("temp", "min")) &&
         valid_kelvin_temp?(day_hash.dig("temp", "max"))
       Rails.logger.warn("invalid open weather day hash: #{day_hash}") unless valid
@@ -170,8 +172,7 @@ module WeatherDataRetriever
     end
 
     def valid_open_weather_data?(weather_data)
-      valid = weather_data.is_a?(Hash) &&
-        valid_kelvin_temp?(weather_data.dig("current", "temp")) &&
+      valid = valid_kelvin_temp?(weather_data.dig("current", "temp")) &&
         weather_data["daily"].is_a?(Array) &&
         weather_data["daily"].length >= 8 &&
         weather_data["daily"].all? { |day_hash| valid_open_weather_day_hash?(day_hash) }
@@ -185,15 +186,20 @@ module WeatherDataRetriever
       valid
     end
 
-    def cache_data_as_hash(str)
-      JSON.parse(str)
+    def parse_json_hash(str)
+      h = JSON.parse(str)
+      unless h.is_a?(Hash)
+        Rails.logger.warn("json data does not contain a hash: #{str}")
+        return {}
+      end
+      h
     rescue JSON::ParserError
-      Rails.logger.warn("cache data does not contain valid JSON: #{str}")
+      Rails.logger.warn("json data not valid: #{str}")
       {}
     end
 
     def parse_cache_data(str)
-      hash = cache_data_as_hash(str)
+      hash = parse_json_hash(str)
       return false unless valid_cache_data_hash?(hash)
 
       @current_temp_celsius = hash["current_temp_celsius"]
@@ -236,13 +242,20 @@ module WeatherDataRetriever
     end
 
     def download_open_weather_data(opts)
-      @open_weather_client.one_call(lat: opts[:latitude], lon: opts[:longitude])
-    rescue OpenWeather::Errors::Fault => e
-      Rails.logger.warn("received fault from OpenWeather: #{e}")
-      {}
-    rescue Faraday::ConnectionFailed => e
-      Rails.logger.warn("received connection failed error when attempting to connect to OpenWeather: #{e}")
-      {}
+      response = RestClient.get 'https://api.openweathermap.org/data/3.0/onecall', {
+        accept: :json,
+        params: {
+          lat: opts[:latitude],
+          lon: opts[:longitude],
+          exclude: "minutely,hourly,alerts",
+          appid: @api_key
+        }
+      }
+      unless response.code.in?(200..299)
+        Rails.logger.warn("received unexpected status #{response.code} from OpenWeather: #{response.body}")
+        return {}
+      end
+      parse_json_hash(response.body)
     end
 
     def parse_open_weather_data(open_weather_data)
@@ -252,7 +265,7 @@ module WeatherDataRetriever
       @downloaded_at = Time.now
       weather_days = open_weather_data["daily"].first(8).map do |day_info|
         WeatherDataRetriever::WeatherDay.new(
-          date: day_info["dt"],
+          date: Time.at(day_info["dt"]),
           low_celsius: kelvin_to_celsius(day_info.dig("temp", "min")),
           high_celsius: kelvin_to_celsius(day_info.dig("temp", "max"))
         )

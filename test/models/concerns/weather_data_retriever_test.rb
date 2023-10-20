@@ -10,7 +10,7 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
 
   class ModuleTest < ActiveSupport::TestCase
     test "valid_time_string? returns true if time string is valid, false otherwise" do
-      assert WeatherDataRetriever.valid_time_string?("2023-10-07 19:00:00 UTC")
+      assert WeatherDataRetriever.valid_time_string?("2023-09-07 19:00:00 UTC")
       refute WeatherDataRetriever.valid_time_string?(nil)
       refute WeatherDataRetriever.valid_time_string?("")
       refute WeatherDataRetriever.valid_time_string?("foo")
@@ -18,39 +18,22 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
     end
   end
 
-  class WeatherDataTest < ActiveSupport::TestCase
+  class WeatherDataSuccessTest < ActiveSupport::TestCase
     setup do
       Rails.cache.clear
-
       Time.zone = "Eastern Time (US & Canada)"
       Timecop.freeze(Time.zone.local(2023, 9, 1, 12, 0, 0))
-
       @model = TestModel.new
-
-      # simulate OpenWeather api returning data successfully
-      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
-      def open_weather_client.one_call(_opts)
-        {
-          "current" => {"temp" => 303.82},
-          "daily" => [
-            {"dt" => "2023-10-07 19:00:00 UTC".to_time, "temp" => {"min" => 294.61, "max" => 304.82}},
-            {"dt" => "2023-10-08 19:00:00 UTC".to_time, "temp" => {"min" => 295.77, "max" => 304.76}},
-            {"dt" => "2023-10-09 19:00:00 UTC".to_time, "temp" => {"min" => 292.9, "max" => 300.5}},
-            {"dt" => "2023-10-10 19:00:00 UTC".to_time, "temp" => {"min" => 290.95, "max" => 296.3}},
-            {"dt" => "2023-10-11 19:00:00 UTC".to_time, "temp" => {"min" => 291.47, "max" => 295.51}},
-            {"dt" => "2023-10-12 19:00:00 UTC".to_time, "temp" => {"min" => 290.68, "max" => 296.23}},
-            {"dt" => "2023-10-13 19:00:00 UTC".to_time, "temp" => {"min" => 291.02, "max" => 296.48}},
-            {"dt" => "2023-10-14 19:00:00 UTC".to_time, "temp" => {"min" => 290.71, "max" => 296.79}}
-          ]
-        }
-      end
-
       @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA",
                        zipcode: "91913", country: "US", temp_unit: "fahrenheit"}
     end
 
     teardown do
       Timecop.return
+    end
+
+    def around(&block)
+      stub_successful_open_weather_response(&block)
     end
 
     test "retrieves valid weather data" do
@@ -112,28 +95,6 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
       refute @model.weather_data.valid?
     end
 
-    test "fails gracefully when OpenWeather returns exception" do
-      # simulate OpenWeather api raising an OpenWeather::Errors::Fault exception
-      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
-      def open_weather_client.one_call(_opts)
-        raise OpenWeather::Errors::Fault, "dummy exception"
-      end
-
-      refute @model.weather_data.retrieve(@request_opts)
-      refute @model.weather_data.valid?
-    end
-
-    test "fails gracefully when network connection fails" do
-      # simulate network exception
-      open_weather_client = @model.weather_data.instance_variable_get(:@open_weather_client)
-      def open_weather_client.one_call(_opts)
-        raise Faraday::ConnectionFailed, "dummy exception"
-      end
-
-      refute @model.weather_data.retrieve(@request_opts)
-      refute @model.weather_data.valid?
-    end
-
     test "current_temp returns the correct value" do
       assert_nil @model.weather_data.current_temp("fahrenheit")
       assert @model.weather_data.retrieve(@request_opts)
@@ -152,7 +113,7 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
     test "current_day returns the correct value" do
       assert @model.weather_data.retrieve(@request_opts)
       day = @model.weather_data.current_day
-      assert_equal "Sat 07", day.day_label
+      assert_equal "Sat 02", day.day_label
       assert_equal 71, day.low
       assert_equal 71, day.low("fahrenheit")
       assert_equal 22, day.low("celsius")
@@ -166,7 +127,7 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
       days = @model.weather_data.forecast_days
       assert_equal 7, days.size
       day = days.first
-      assert_equal "Sun 08", day.day_label
+      assert_equal "Sun 03", day.day_label
       assert_equal 73, day.low
       assert_equal 73, day.low("fahrenheit")
       assert_equal 23, day.low("celsius")
@@ -174,7 +135,7 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
       assert_equal 89, day.high("fahrenheit")
       assert_equal 32, day.high("celsius")
       day = days.last
-      assert_equal "Sat 14", day.day_label
+      assert_equal "Sat 09", day.day_label
       assert_equal 64, day.low
       assert_equal 64, day.low("fahrenheit")
       assert_equal 18, day.low("celsius")
@@ -201,6 +162,30 @@ class WeatherDataRetrieverTest < ActiveSupport::TestCase
       days = weather_data.instance_variable_get(:@forecast_days)
       days.pop
       refute weather_data.valid?
+    end
+  end
+
+  class WeatherDataFaulureTest < ActiveSupport::TestCase
+    setup do
+      Rails.cache.clear
+      Time.zone = "Eastern Time (US & Canada)"
+      Timecop.freeze(Time.zone.local(2023, 9, 1, 12, 0, 0))
+      @model = TestModel.new
+      @request_opts = {latitude: 32.6502944, longitude: -116.983784, city: "Chula Vista", state: "CA",
+                       zipcode: "91913", country: "US", temp_unit: "fahrenheit"}
+    end
+
+    teardown do
+      Timecop.return
+    end
+
+    test "fails gracefully when OpenWeather API returns 4xx or 5xx errors" do
+      [404, 407, 500, 502].each do |code|
+        stub_failed_open_weather_response(code) do
+          refute @model.weather_data.retrieve(@request_opts)
+          refute @model.weather_data.valid?
+        end
+      end
     end
   end
 end
